@@ -1,6 +1,38 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
+@theme {
+  /* 🎨 Brown palette */
+  --color-brown60: #ae9b84;
+  --color-brown65: #b8a893;
+  --color-brown70: #c2b4a3;
+  --color-brown80: #d6cdc2;
+  --color-brown90: #ebe6e0;
+  --color-brown95: #f5f3f0;
+  --color-brown97: #f9f8f6;
+  --color-brown99: #fdfdfc;
+
+  /* 🖤 Black palette */
+  --color-black06: #0f0f0f;
+  --color-black10: #1a1a1a;
+  --color-black12: #1f1f1f;
+  --color-black15: #262626;
+  --color-black20: #333333;
+  --color-black25: #404040;
+  --color-black30: #4d4d4d;
+  --color-black35: #595959;
+
+  /* ⚪ Gray palette */
+  --color-gray40: #676665;
+  --color-gray50: #81807e;
+  --color-gray70: #b3b3b2;
+  --color-gray80: #cccccc;
+  --color-gray90: #e6e6e6;
+  --color-gray95: #f2f2f2;
+  --color-gray97: #f7f7f7;
+  --color-gray99: #fcfcfc;
+
+}
 
 body {
   font-family: 'Roboto', sans-serif;
