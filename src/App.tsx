@@ -7,6 +7,7 @@ import Overview from "./pages/Overview";
 import Man from "./pages/Categories/Man";
 import Woman from "./pages/Categories/Woman";
 import Child from "./pages/Categories/Child";
+import ProductDetails from "./pages/ProductDetails";
 
 
 const routes = [
@@ -27,7 +28,12 @@ const routes = [
       {
         path: "categories",
         children: [
-          { path: "man", element: <Man /> },
+          {
+            path: "man", element: <Man />,
+            children: [
+              { path: "productdetails", element: <ProductDetails /> }
+            ]
+          },
           { path: "woman", element: <Woman /> },
           { path: "child", element: <Child /> },
         ],

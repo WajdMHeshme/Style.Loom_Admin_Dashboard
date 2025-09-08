@@ -97,7 +97,7 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 bg-brown95 dark:bg-black12 text-black dark:text-white">
+      <main className="flex-1  bg-black12 text-white">
         <Outlet />
       </main>
     </div>
