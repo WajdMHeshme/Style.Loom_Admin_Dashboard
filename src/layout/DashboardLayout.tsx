@@ -91,7 +91,7 @@ export default function DashboardLayout() {
             }`}
           >
             <FiLogOut size={24} />
-            {!collapsed && <span>Log out</span>}
+            {!collapsed && <span>Logout</span>}
           </button>
         </div>
       </aside>
