@@ -10,6 +10,7 @@ import Child from "./pages/Categories/Child";
 import ProductDetails from "./pages/ProductDetails";
 import FAQ from "./pages/FAQ";
 import Users from "./pages/Users";
+import Orders from "./pages/Orders";
 
 
 const routes = [
@@ -29,6 +30,7 @@ const routes = [
       { path: "overview", element: <Overview /> },
       { path: "faq" , element : <FAQ />},
       { path: "users" , element : <Users />},
+      { path: "orders" , element : <Orders />},
       {
         path: "categories",
         children: [

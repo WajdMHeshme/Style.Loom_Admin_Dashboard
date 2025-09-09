@@ -4,7 +4,8 @@ import { Outlet, Link, useNavigate } from "react-router-dom";
 import { FiLogOut, FiChevronLeft, FiMenu } from "react-icons/fi";
 import { TbShoppingCartStar } from "react-icons/tb";
 import { LiaTshirtSolid } from "react-icons/lia";
-import { MdOutlineQuestionAnswer, MdOutlinePeople } from "react-icons/md"; // أيقونات مؤقتة
+import { MdOutlineQuestionAnswer, MdOutlinePeople } from "react-icons/md";
+import { RiFileList3Line } from "react-icons/ri"; // أيقونة للـ Orders
 import CategoryDropdown from "../components/CategoryDropdown";
 
 export default function DashboardLayout() {
@@ -75,6 +76,18 @@ export default function DashboardLayout() {
             {!collapsed && <span>Overview</span>}
           </Link>
 
+          {/* Orders */}
+          <Link
+            to="/dashboard/orders"
+            onClick={() => setActiveTab("orders")}
+            className={`flex items-center space-x-2 p-2 rounded-lg transition
+              ${activeTab === "orders" ? "bg-brown70" : "hover:bg-white/10"}
+              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
+          >
+            <RiFileList3Line size={24} />
+            {!collapsed && <span>Orders</span>}
+          </Link>
+
           {/* FAQ */}
           <Link
             to="/dashboard/faq"
@@ -124,9 +137,10 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1  bg-black12 text-white ">
+      <main className="flex-1 bg-black12 text-white ">
         <Outlet />
       </main>
     </div>
   );
 }
+
