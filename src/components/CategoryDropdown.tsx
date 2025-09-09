@@ -43,7 +43,7 @@ export default function CategoryDropdown({ collapsed, activeTab, onSelect }: Pro
         onClick={() => setOpen(!open)}
         className={`flex items-center space-x-2 p-2 rounded-lg transition cursor-pointer w-full
           ${collapsed ? "justify-center" : "justify-start"}
-          ${activeTab && activeTab === selected ? "bg-brown60" : "hover:bg-white/10"}
+          ${activeTab && activeTab === selected ? "bg-brown70" : "hover:bg-white/10"}
         `}
       >
         <TbListDetails size={24} />
@@ -67,7 +67,7 @@ export default function CategoryDropdown({ collapsed, activeTab, onSelect }: Pro
               key={cat.value}
               onClick={() => handleSelect(cat.value)}
               className={`flex items-center p-2 w-full  cursor-pointer rounded-lg
-                ${activeTab === cat.value ? "bg-brown60" : "hover:bg-white/20"}
+                ${activeTab === cat.value ? "bg-brown70" : "hover:bg-white/20"}
               `}
             >
               <TbListDetails size={24} />

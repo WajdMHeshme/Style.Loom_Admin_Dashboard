@@ -4,6 +4,7 @@ import { Outlet, Link, useNavigate } from "react-router-dom";
 import { FiLogOut, FiChevronLeft, FiMenu } from "react-icons/fi";
 import { TbShoppingCartStar } from "react-icons/tb";
 import { LiaTshirtSolid } from "react-icons/lia";
+import { MdOutlineQuestionAnswer, MdOutlinePeople } from "react-icons/md"; // أيقونات مؤقتة
 import CategoryDropdown from "../components/CategoryDropdown";
 
 export default function DashboardLayout() {
@@ -50,26 +51,52 @@ export default function DashboardLayout() {
             collapsed ? "items-center" : "items-start"
           }`}
         >
+          {/* Products */}
           <Link
             to="/dashboard/products"
             onClick={() => setActiveTab("products")}
             className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "products" ? "bg-brown60" : "hover:bg-white/10"}
+              ${activeTab === "products" ? "bg-brown70" : "hover:bg-white/10"}
               ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
           >
             <LiaTshirtSolid size={24} />
             {!collapsed && <span>Products</span>}
           </Link>
 
+          {/* Overview */}
           <Link
             to="/dashboard/overview"
             onClick={() => setActiveTab("overview")}
             className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "overview" ? "bg-brown60" : "hover:bg-white/10"}
+              ${activeTab === "overview" ? "bg-brown70" : "hover:bg-white/10"}
               ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
           >
             <TbShoppingCartStar size={24} />
             {!collapsed && <span>Overview</span>}
+          </Link>
+
+          {/* FAQ */}
+          <Link
+            to="/dashboard/faq"
+            onClick={() => setActiveTab("faq")}
+            className={`flex items-center space-x-2 p-2 rounded-lg transition
+              ${activeTab === "faq" ? "bg-brown70" : "hover:bg-white/10"}
+              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
+          >
+            <MdOutlineQuestionAnswer size={24} />
+            {!collapsed && <span>FAQ</span>}
+          </Link>
+
+          {/* Users */}
+          <Link
+            to="/dashboard/users"
+            onClick={() => setActiveTab("users")}
+            className={`flex items-center space-x-2 p-2 rounded-lg transition
+              ${activeTab === "users" ? "bg-brown70" : "hover:bg-white/10"}
+              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
+          >
+            <MdOutlinePeople size={24} />
+            {!collapsed && <span>Users</span>}
           </Link>
 
           {/* Category Dropdown */}
@@ -97,7 +124,7 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1  bg-black12 text-white">
+      <main className="flex-1  bg-black12 text-white ">
         <Outlet />
       </main>
     </div>

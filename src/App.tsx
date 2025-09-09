@@ -8,6 +8,8 @@ import Man from "./pages/Categories/Man";
 import Woman from "./pages/Categories/Woman";
 import Child from "./pages/Categories/Child";
 import ProductDetails from "./pages/ProductDetails";
+import FAQ from "./pages/FAQ";
+import Users from "./pages/Users";
 
 
 const routes = [
@@ -25,6 +27,8 @@ const routes = [
     children: [
       { path: "products", element: <Products /> },
       { path: "overview", element: <Overview /> },
+      { path: "faq" , element : <FAQ />},
+      { path: "users" , element : <Users />},
       {
         path: "categories",
         children: [
