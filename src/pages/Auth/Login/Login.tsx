@@ -1,9 +1,11 @@
 import { useRef } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
     const emailRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
+    const navigate = useNavigate(); // ✅ hook للانتقال
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -12,19 +14,26 @@ export default function Login() {
         const password = passwordRef.current?.value || "";
 
         try {
-            // 🔗 API وهمي (غير الرابط لما يجهز الباك)
-            const response = await axios.post("https://jsonplaceholder.typicode.com/posts", {
+            // ✅ API الحقيقي
+            const response = await axios.post("http://localhost:3000/api/dashboard/login", {
                 email,
                 password,
             });
+
+            // بافتراض أن الباك يرجع { token: "xxxxx" }
             const token = response.data.token;
-            localStorage.setItem("token", token);
-            
-            console.log("✅ Success:", response.data);
-            alert("Login success (dummy) ✅");
-        } catch (error) {
-            console.error("❌ Error:", error);
-            alert("Login failed ❌");
+            if (token) {
+                localStorage.setItem("token", token);
+                console.log("✅ Login Success:", response.data);
+
+                // ✅ الانتقال للداشبورد
+                navigate("/dashboard");
+            } else {
+                console.error("Login failed: No token returned ❌");
+            }
+
+        } catch (error: any) {
+            console.error("❌ Error:", error.response?.data || error.message);
         }
     };
 
