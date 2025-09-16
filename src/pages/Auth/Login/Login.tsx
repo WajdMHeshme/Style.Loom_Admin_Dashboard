@@ -1,9 +1,13 @@
 import { useRef } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Login() {
     const emailRef = useRef<HTMLInputElement | null>(null);
     const passwordRef = useRef<HTMLInputElement | null>(null);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -12,19 +16,32 @@ export default function Login() {
         const password = passwordRef.current?.value || "";
 
         try {
-            // 🔗 API وهمي (غير الرابط لما يجهز الباك)
-            const response = await axios.post("https://jsonplaceholder.typicode.com/posts", {
+            const response = await axios.post("/api/dashboard/login", {
                 email,
                 password,
             });
+
             const token = response.data.token;
-            localStorage.setItem("token", token);
-            
-            console.log("✅ Success:", response.data);
-            alert("Login success (dummy) ✅");
-        } catch (error) {
-            console.error("❌ Error:", error);
-            alert("Login failed ❌");
+
+            if (token) {
+                localStorage.setItem("token", token);
+
+                console.log("✅ Login success:", response.data);
+                toast.success("Login success ✅");
+
+                // 🚀 Redirect to dashboard
+                setTimeout(() => navigate("/dashboard"), 1500);
+            } else {
+                toast.error("❌ No token received from server");
+            }
+
+        } catch (error: any) {
+            console.error("❌ Login error:", error);
+            if (error.response) {
+                toast.error(`Login failed: ${error.response.data.message || "Invalid credentials"}`);
+            } else {
+                toast.error("Login failed: Server not responding ❌");
+            }
         }
     };
 
@@ -92,6 +109,9 @@ export default function Login() {
                     Login
                 </button>
             </form>
+
+            {/* Toast container */}
+            <ToastContainer position="top-center" autoClose={2000} />
         </div>
     );
 }

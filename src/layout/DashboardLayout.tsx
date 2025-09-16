@@ -1,146 +1,121 @@
-// DashboardLayout.tsx
 import { useState } from "react";
-import { Outlet, Link, useNavigate } from "react-router-dom";
-import { FiLogOut, FiChevronLeft, FiMenu } from "react-icons/fi";
-import { TbShoppingCartStar } from "react-icons/tb";
-import { LiaTshirtSolid } from "react-icons/lia";
-import { MdOutlineQuestionAnswer, MdOutlinePeople } from "react-icons/md";
-import { RiFileList3Line } from "react-icons/ri"; // أيقونة للـ Orders
-import CategoryDropdown from "../components/CategoryDropdown";
+import { Outlet, useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { FiLogOut, FiX } from "react-icons/fi";
 
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("");
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setShowLogoutModal(false);
+    toast.info("Logged out successfully");
+    navigate("/login");
+  };
+
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside
-        className={`${
-          collapsed ? "w-20" : "w-64"
-        } bg-black15 text-white flex flex-col transition-all duration-300`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between py-4 px-2 border-b border-white/20">
-          {!collapsed && (
-            <div className="flex items-center space-x-2">
-              <img
-                src="/logoloom.png"
-                alt="logo"
-                className="w-[20px] h-[20px] cursor-pointer"
-              />
-              <Link className="text-xl font-bold" to={"/dashboard"}>
-                Dashboard
-              </Link>
-            </div>
-          )}
+    <>
+      <div className="flex min-h-screen">
+        <Sidebar
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onLogoutClick={() => setShowLogoutModal(true)}
+        />
 
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={`p-2 rounded-lg hover:bg-white/10 transition cursor-pointer ${
-              collapsed ? "mx-auto" : ""
-            }`}
-          >
-            {collapsed ? <FiMenu size={20} /> : <FiChevronLeft size={20} />}
-          </button>
-        </div>
+        {/* Main Content */}
+        <main className="flex-1 bg-[var(--color-black12)] text-white">
+          <Outlet />
+        </main>
+      </div>
 
-        {/* Navigation */}
-        <nav
-          className={`flex-1 flex flex-col mt-4 px-2 space-y-2 ${
-            collapsed ? "items-center" : "items-start"
-          }`}
-        >
-          {/* Products */}
-          <Link
-            to="/dashboard/products"
-            onClick={() => setActiveTab("products")}
-            className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "products" ? "bg-brown70" : "hover:bg-white/10"}
-              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
-          >
-            <LiaTshirtSolid size={24} />
-            {!collapsed && <span>Products</span>}
-          </Link>
+      {/* Toasts */}
+      <ToastContainer position="top-center" autoClose={2000} />
 
-          {/* Overview */}
-          <Link
-            to="/dashboard/overview"
-            onClick={() => setActiveTab("overview")}
-            className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "overview" ? "bg-brown70" : "hover:bg-white/10"}
-              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
-          >
-            <TbShoppingCartStar size={24} />
-            {!collapsed && <span>Overview</span>}
-          </Link>
-
-          {/* Orders */}
-          <Link
-            to="/dashboard/orders"
-            onClick={() => setActiveTab("orders")}
-            className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "orders" ? "bg-brown70" : "hover:bg-white/10"}
-              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
-          >
-            <RiFileList3Line size={24} />
-            {!collapsed && <span>Orders</span>}
-          </Link>
-
-          {/* FAQ */}
-          <Link
-            to="/dashboard/faq"
-            onClick={() => setActiveTab("faq")}
-            className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "faq" ? "bg-brown70" : "hover:bg-white/10"}
-              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
-          >
-            <MdOutlineQuestionAnswer size={24} />
-            {!collapsed && <span>FAQ</span>}
-          </Link>
-
-          {/* Users */}
-          <Link
-            to="/dashboard/users"
-            onClick={() => setActiveTab("users")}
-            className={`flex items-center space-x-2 p-2 rounded-lg transition
-              ${activeTab === "users" ? "bg-brown70" : "hover:bg-white/10"}
-              ${collapsed ? "justify-center w-auto" : "justify-start w-full"}`}
-          >
-            <MdOutlinePeople size={24} />
-            {!collapsed && <span>Users</span>}
-          </Link>
-
-          {/* Category Dropdown */}
-          <CategoryDropdown
-            collapsed={collapsed}
-            activeTab={activeTab}
-            onSelect={(value) => {
-              setActiveTab(value); // تحديث الزر النشط
-              navigate(`/dashboard/categories/${value}`);
-            }}
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
+            onClick={() => setShowLogoutModal(false)}
           />
-        </nav>
+          <div className="relative w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200"
+              style={{
+                background: "linear-gradient(180deg, var(--color-brown95), var(--color-brown99))",
+                border: "1px solid var(--color-brown70)",
+              }}
+            >
+              <div className="flex items-center justify-between px-6 py-4">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="flex-shrink-0 rounded-full p-3"
+                    style={{
+                      background: "linear-gradient(135deg, var(--color-brown60), var(--color-brown65))",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+                    }}
+                  >
+                    <FiLogOut size={20} color="#fff" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold" style={{ color: "var(--color-black06)" }}>
+                      Confirm Logout
+                    </h3>
+                    <p className="text-sm mt-1" style={{ color: "var(--color-brown80)" }}>
+                      Are you sure you want to sign out of your account?
+                    </p>
+                  </div>
+                </div>
 
-        {/* Logout Button */}
-        <div className="px-2 mb-4 flex justify-center items-center">
-          <button
-            className={`flex items-center space-x-2 p-2 rounded-lg hover:bg-red-500/20 transition cursor-pointer ${
-              collapsed ? "justify-center w-auto" : "justify-start w-full"
-            }`}
-          >
-            <FiLogOut size={24} />
-            {!collapsed && <span>Logout</span>}
-          </button>
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="p-2 rounded-md hover:bg-black/5 transition"
+                  aria-label="Close"
+                >
+                  <FiX size={18} style={{ color: "var(--color-black06)" }} />
+                </button>
+              </div>
+
+              <div className="px-6 pb-6">
+                <p className="text-sm mb-4" style={{ color: "var(--color-brown70)" }}>
+                  You will be redirected to the login page. Any unsaved changes may be lost.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="flex-1 py-2 rounded-xl font-medium border transition"
+                    style={{
+                      background: "transparent",
+                      borderColor: "var(--color-brown80)",
+                      color: "var(--color-brown60)",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 py-2 rounded-xl font-medium transition"
+                    style={{
+                      background: "linear-gradient(90deg, var(--color-brown60), var(--color-brown65))",
+                      color: "white",
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 bg-black12 text-white ">
-        <Outlet />
-      </main>
-    </div>
+      )}
+    </>
   );
 }
-
