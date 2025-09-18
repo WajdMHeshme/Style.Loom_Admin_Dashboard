@@ -38,23 +38,27 @@ export default function Sidebar({
                 } bg-[var(--color-black15)] text-white flex flex-col transition-all duration-300`}
         >
             {/* Header */}
-            <div className="flex items-center justify-between py-4 px-3 border-b border-white/10">
-                {!collapsed && (
-                    <div className="flex items-center gap-3">
-                        <img src="/logoloom.png" alt="logo" className="w-6 h-6" />
-                        <Link className="text-lg font-semibold" to={"/dashboard"}>
-                            Dashboard
-                        </Link>
-                    </div>
-                )}
-                <button
-                    onClick={() => setCollapsed(!collapsed)}
-                    className="p-2 rounded-md hover:bg-white/5 transition"
-                    aria-label="Toggle sidebar"
-                >
-                    {collapsed ? <FiMenu size={18} /> : <FiChevronLeft size={18} />}
-                </button>
-            </div>
+  <div
+    className={`flex items-center py-4 px-3 border-b border-white/10 
+        ${collapsed ? "justify-center" : "justify-between"}`}
+>
+    {!collapsed && (
+        <div className="flex items-center gap-3">
+            <img src="/logoloom.png" alt="logo" className="w-6 h-6" />
+            <Link className="text-lg font-semibold" to={"/dashboard"}>
+                Dashboard
+            </Link>
+        </div>
+    )}
+    <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="p-2 rounded-md hover:bg-white/5 transition"
+        aria-label="Toggle sidebar"
+    >
+        {collapsed ? <FiMenu size={18} /> : <FiChevronLeft size={18} />}
+    </button>
+</div>
+
 
             {/* Navigation */}
             <nav

@@ -11,34 +11,29 @@ import ProductDetails from "./pages/ProductDetails";
 import FAQ from "./pages/FAQ";
 import Users from "./pages/Users";
 import Orders from "./pages/Orders";
+import DashboardHome from "./pages/Home";
 
 
 const routes = [
-  {
-    path: "/",
-    element: <Navigate to="/login" replace />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
+  { path: "/", element: <Navigate to="/login" replace /> },
+  { path: "/login", element: <Login /> },
   {
     path: "/dashboard",
     element: <DashboardLayout />,
     children: [
+      { path: "", element: <DashboardHome /> }, // default الهوم بعد الدخول
       { path: "products", element: <Products /> },
       { path: "overview", element: <Overview /> },
-      { path: "faq" , element : <FAQ />},
-      { path: "users" , element : <Users />},
-      { path: "orders" , element : <Orders />},
+      { path: "faq", element: <FAQ /> },
+      { path: "users", element: <Users /> },
+      { path: "orders", element: <Orders /> },
       {
         path: "categories",
         children: [
           {
-            path: "man", element: <Man />,
-            children: [
-              { path: "productdetails", element: <ProductDetails /> }
-            ]
+            path: "man",
+            element: <Man />,
+            children: [{ path: "productdetails", element: <ProductDetails /> }],
           },
           { path: "woman", element: <Woman /> },
           { path: "child", element: <Child /> },
