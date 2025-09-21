@@ -45,11 +45,11 @@ export default function Users() {
     try {
       await api.delete(`/users/${id}`);
       setUsers(users.filter((u) => u.id !== id));
-      toast.success("✅ User deleted successfully");
+      toast.success("User deleted successfully");
       closeModal();
     } catch (err) {
       console.error("Error deleting user:", err);
-      toast.error("❌ Failed to delete user");
+      toast.error("Failed to delete user");
     }
   };
 

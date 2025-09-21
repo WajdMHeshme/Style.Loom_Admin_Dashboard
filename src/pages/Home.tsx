@@ -60,13 +60,6 @@ export default function DashboardHome(): JSX.Element {
 
   const roles = Array.from(new Set(users.map((u) => u.role))).filter(Boolean);
 
-  const chartData = roles.length
-    ? roles.map((role) => ({
-        name: role,
-        users: users.filter((u) => u.role === role).length,
-      }))
-    : [{ name: "No data", users: 0 }];
-
   const displayedAdmins = users.filter((u) => {
     if (selectedRole === "all") return u.role.toLowerCase().includes("admin");
     return u.role === selectedRole;
@@ -97,10 +90,14 @@ export default function DashboardHome(): JSX.Element {
   ];
 
   const prevUser = () => {
-    setCurrentUserIndex((i) => (users.length ? (i <= 0 ? users.length - 1 : i - 1) : 0));
+    setCurrentUserIndex((i) =>
+      users.length ? (i <= 0 ? users.length - 1 : i - 1) : 0
+    );
   };
   const nextUser = () => {
-    setCurrentUserIndex((i) => (users.length ? (i >= users.length - 1 ? 0 : i + 1) : 0));
+    setCurrentUserIndex((i) =>
+      users.length ? (i >= users.length - 1 ? 0 : i + 1) : 0
+    );
   };
 
   return (
@@ -108,18 +105,23 @@ export default function DashboardHome(): JSX.Element {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Dashboard Home</h2>
         <div className="flex items-center gap-3">
-          <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-            className="bg-white/5 text-sm p-2 rounded border border-white/10"
-          >
-            <option value="all">All admins (default)</option>
-            {roles.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+<select
+  value={selectedRole}
+  onChange={(e) => setSelectedRole(e.target.value)}
+  className="bg-black10 text-white text-sm px-3 py-2 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-brown70 focus:border-brown70 transition duration-200"
+>
+  <option className="bg-black15 text-white">All admins (default)</option>
+  {roles.map((r) => (
+    <option
+      key={r}
+      value={r}
+      className="bg-black15 text-white hover:bg-brown65"
+    >
+      {r}
+    </option>
+  ))}
+</select>
+
           <button
             onClick={refresh}
             className="px-3 py-2 bg-brown70 rounded hover:bg-brown65 text-white text-sm"
@@ -139,10 +141,15 @@ export default function DashboardHome(): JSX.Element {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Products chart on the LEFT (static) */}
             <div className="lg:col-span-2 bg-black15 p-4 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold mb-4">Products Overview (static)</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                Products Overview (static)
+              </h3>
               <div style={{ width: "100%", height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={productsData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                  <LineChart
+                    data={productsData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -169,23 +176,36 @@ export default function DashboardHome(): JSX.Element {
             <div className="bg-black15 p-4 rounded-lg shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold">Admins</h3>
-                <span className="text-sm text-gray-400">{displayedAdmins.length} found</span>
+                <span className="text-sm text-gray-400">
+                  {displayedAdmins.length} found
+                </span>
               </div>
 
               {displayedAdmins.length === 0 ? (
-                <p className="text-sm text-gray-400">No admins found for the selected role.</p>
+                <p className="text-sm text-gray-400">
+                  No admins found for the selected role.
+                </p>
               ) : (
                 <div className="space-y-3 max-h-[360px] overflow-auto pr-2">
                   {displayedAdmins.map((u) => (
-                    <div key={u.id} className="flex items-center gap-3 p-3 bg-black10 rounded">
+                    <div
+                      key={u.id}
+                      className="flex items-center gap-3 p-3 bg-black10 rounded"
+                    >
                       <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-semibold">
-                        {`${u.first_name?.[0] ?? "?"}${u.last_name?.[0] ?? ""}`.toUpperCase()}
+                        {`${u.first_name?.[0] ?? "?"}${
+                          u.last_name?.[0] ?? ""
+                        }`.toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-medium">{u.first_name} {u.last_name}</div>
-                            <div className="text-xs text-gray-400">{u.email}</div>
+                            <div className="font-medium">
+                              {u.first_name} {u.last_name}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {u.email}
+                            </div>
                           </div>
                           <div className="text-sm text-gray-300">{u.role}</div>
                         </div>
@@ -206,7 +226,9 @@ export default function DashboardHome(): JSX.Element {
               <h3 className="text-lg font-semibold">All System Users</h3>
 
               <div className="flex items-center gap-2">
-                <div className="text-sm text-gray-400">{users.length} found</div>
+                <div className="text-sm text-gray-400">
+                  {users.length} found
+                </div>
 
                 {/* Prev / Next controls */}
                 <button
@@ -225,7 +247,9 @@ export default function DashboardHome(): JSX.Element {
                 </button>
 
                 <div className="text-xs text-gray-400">
-                  {users.length ? `${currentUserIndex + 1} / ${users.length}` : "0 / 0"}
+                  {users.length
+                    ? `${currentUserIndex + 1} / ${users.length}`
+                    : "0 / 0"}
                 </div>
               </div>
             </div>
@@ -245,18 +269,24 @@ export default function DashboardHome(): JSX.Element {
                       userRefs.current[idx] = el;
                     }}
                     className={`snap-start flex items-center gap-3 p-3 bg-black10 rounded mx-1 my-1 transition-transform duration-200 ${
-                      idx === currentUserIndex ? "scale-100" : "scale-95 opacity-70"
+                      idx === currentUserIndex
+                        ? "scale-100"
+                        : "scale-95 opacity-70"
                     }`}
                     style={{ minHeight: 112 }} // keep consistent height for one visible item
                     onClick={() => setCurrentUserIndex(idx)}
                   >
                     <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center font-semibold text-lg">
-                      {`${u.first_name?.[0] ?? "?"}${u.last_name?.[0] ?? ""}`.toUpperCase()}
+                      {`${u.first_name?.[0] ?? "?"}${
+                        u.last_name?.[0] ?? ""
+                      }`.toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-medium">{u.first_name} {u.last_name}</div>
+                          <div className="font-medium">
+                            {u.first_name} {u.last_name}
+                          </div>
                           <div className="text-xs text-gray-400">{u.email}</div>
                         </div>
                         <div className="text-sm text-gray-300">{u.role}</div>

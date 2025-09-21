@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import api from "../../../api/Api"; // 👈 نستخدم Axios instance
@@ -8,8 +8,16 @@ export default function Login() {
   const emailRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const location = useLocation(); // 👈 نحتاجه لنشوف إذا جاي من ProtectedRoute
 
   const [loading, setLoading] = useState(false);
+
+  // 👇 إذا المستخدم جاي من ProtectedRoute
+  useEffect(() => {
+    if (location.state?.from === "protected") {
+      toast.warning("Please log in first !");
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +26,7 @@ export default function Login() {
     const password = passwordRef.current?.value.trim() || "";
 
     if (!email || !password) {
-      toast.error("❌ Please fill all fields");
+      toast.error("Please fill all fields !");
       return;
     }
 
@@ -32,10 +40,10 @@ export default function Login() {
         localStorage.setItem("token", token);
         toast.success("Login success");
 
-        // 🚀 Redirect to Users page
+        // 🚀 Redirect to Dashboard
         setTimeout(() => navigate("/dashboard"), 1500);
       } else {
-        toast.error(" No token received from server");
+        toast.error("No token received from server");
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -118,3 +126,4 @@ export default function Login() {
     </div>
   );
 }
+

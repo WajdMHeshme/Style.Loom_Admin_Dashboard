@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Login from "./pages/Auth/Login/Login";
 import DashboardLayout from "./layout/DashboardLayout";
 
@@ -13,52 +16,36 @@ import Users from "./pages/Users";
 import Orders from "./pages/Orders";
 import DashboardHome from "./pages/Home";
 
-
-const routes = [
-  { path: "/", element: <Navigate to="/login" replace /> },
-  { path: "/login", element: <Login /> },
-  {
-    path: "/dashboard",
-    element: <DashboardLayout />,
-    children: [
-      { path: "", element: <DashboardHome /> }, // default الهوم بعد الدخول
-      { path: "products", element: <Products /> },
-      { path: "overview", element: <Overview /> },
-      { path: "faq", element: <FAQ /> },
-      { path: "users", element: <Users /> },
-      { path: "orders", element: <Orders /> },
-      {
-        path: "categories",
-        children: [
-          {
-            path: "man",
-            element: <Man />,
-            children: [{ path: "productdetails", element: <ProductDetails /> }],
-          },
-          { path: "woman", element: <Woman /> },
-          { path: "child", element: <Child /> },
-        ],
-      },
-    ],
-  },
-];
-
-const renderRoutes = (routes: any[]) =>
-  routes.map((route, i) => {
-    if (route.children) {
-      return (
-        <Route key={i} path={route.path} element={route.element}>
-          {renderRoutes(route.children)}
-        </Route>
-      );
-    }
-    return <Route key={i} path={route.path} element={route.element} />;
-  });
+import ProtectedRoute from "./components/ProtectedRoute";
+import AddProduct from "./pages/AddProduct";
 
 function App() {
   return (
     <Router>
-      <Routes>{renderRoutes(routes)}</Routes>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardHome />} />
+            <Route path="products" element={<Products />} />
+            <Route path="add-product" element={<AddProduct />} /> {/* 👈 Route جديد */}
+            <Route path="overview" element={<Overview />} />
+            <Route path="faq" element={<FAQ />} />
+            <Route path="users" element={<Users />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="categories">
+              <Route path="man" element={<Man />}>
+                <Route path="productdetails" element={<ProductDetails />} />
+              </Route>
+              <Route path="woman" element={<Woman />} />
+              <Route path="child" element={<Child />} />
+            </Route>
+          </Route>
+        </Route>
+      </Routes>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </Router>
   );
 }
