@@ -3,12 +3,13 @@ import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiLogOut, FiX } from "react-icons/fi";
+import { ImExit } from "react-icons/im";
 
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [animate, setAnimate] = useState(false); // 👈 للتحكم بالحركة
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -16,6 +17,18 @@ export default function DashboardLayout() {
     setShowLogoutModal(false);
     toast.info("Logged out successfully");
     navigate("/login");
+  };
+
+  const openModal = () => {
+    setShowLogoutModal(true);
+    // نضيف تأخير بسيط لتفعيل الحركة بعد render
+    setTimeout(() => setAnimate(true), 50);
+  };
+
+  const closeModal = () => {
+    setAnimate(false);
+    // ننتظر مدة الأنميشن ثم نخفي المودال
+    setTimeout(() => setShowLogoutModal(false), 300);
   };
 
   return (
@@ -26,7 +39,7 @@ export default function DashboardLayout() {
           setCollapsed={setCollapsed}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onLogoutClick={() => setShowLogoutModal(true)}
+          onLogoutClick={openModal}
         />
 
         {/* Main Content */}
@@ -40,78 +53,36 @@ export default function DashboardLayout() {
 
       {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300">
           <div
-            className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
-            onClick={() => setShowLogoutModal(false)}
-          />
-          <div className="relative w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <div
-              className="rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200"
-              style={{
-                background: "linear-gradient(180deg, var(--color-brown95), var(--color-brown99))",
-                border: "1px solid var(--color-brown70)",
-              }}
-            >
-              <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <div
-                    className="flex-shrink-0 rounded-full p-3"
-                    style={{
-                      background: "linear-gradient(135deg, var(--color-brown60), var(--color-brown65))",
-                      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                    }}
-                  >
-                    <FiLogOut size={20} color="#fff" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold" style={{ color: "var(--color-black06)" }}>
-                      Confirm Logout
-                    </h3>
-                    <p className="text-sm mt-1" style={{ color: "var(--color-brown80)" }}>
-                      Are you sure you want to sign out of your account?
-                    </p>
-                  </div>
-                </div>
+            className={`bg-black12 rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center text-center transform transition-all duration-300 ${
+              animate ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 -translate-y-6"
+            }`}
+          >
+            <div className="rounded-full p-4 mb-4 text-center">
+              <ImExit size={30} color="#c2b4a3" />
+            </div>
 
-                <button
-                  onClick={() => setShowLogoutModal(false)}
-                  className="p-2 rounded-md hover:bg-black/5 transition"
-                  aria-label="Close"
-                >
-                  <FiX size={18} style={{ color: "var(--color-black06)" }} />
-                </button>
-              </div>
+            <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
+              Confirm Logout
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to sign out of your account? You will be redirected to the login page.
+            </p>
 
-              <div className="px-6 pb-6">
-                <p className="text-sm mb-4" style={{ color: "var(--color-brown70)" }}>
-                  You will be redirected to the login page. Any unsaved changes may be lost.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowLogoutModal(false)}
-                    className="flex-1 py-2 rounded-xl font-medium border transition"
-                    style={{
-                      background: "transparent",
-                      borderColor: "var(--color-brown80)",
-                      color: "var(--color-brown60)",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 py-2 rounded-xl font-medium transition"
-                    style={{
-                      background: "linear-gradient(90deg, var(--color-brown60), var(--color-brown65))",
-                      color: "white",
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={closeModal}
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 py-2 rounded-lg bg-brown70 text-white hover:bg-brown65 transition"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
