@@ -159,7 +159,7 @@ export default function DashboardHome(): JSX.Element {
                       type="monotone"
                       dataKey="sold"
                       name="Sold"
-                      stroke="#a0522d" // brown70
+                      stroke="#c2b4a3" // brown70
                       strokeWidth={3}
                       dot={{ r: 5 }}
                       activeDot={{ r: 8 }}
@@ -167,8 +167,8 @@ export default function DashboardHome(): JSX.Element {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <p className="mt-3 text-sm text-gray-300">
-                هذه بيانات ستاتيكية للمنتجات — استبدلها ببيانات الــ API لاحقًا.
+              <p className="mt-3 text-2xl text-brown70 font-bold">
+              Style.Loom
               </p>
             </div>
 
