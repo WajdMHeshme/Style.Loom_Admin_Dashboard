@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
 @theme {
   /* 🎨 Brown palette */
   --color-brown60: #ae9b84;
