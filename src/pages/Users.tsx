@@ -31,7 +31,7 @@ export default function Users() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get("/users");
+      const res = await api.get("/dashboard/users");
       setUsers(res.data.users);
     } catch (err) {
       console.error("Error fetching users:", err);

@@ -1,7 +1,7 @@
 // src/pages/Products.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/Api";
+import api from "../api/Api"; // ← استخدم الملف مباشرة
 
 interface Product {
   id: number;
@@ -26,12 +26,11 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const navigate = useNavigate(); // <-- added for navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // ← هنا لم يتغير استدعاء الـ API
     api
-      .get("../product")
+      .get("/product") // ← هنا استخدمنا api من ملف api.ts
       .then((res) => {
         setProducts(res.data);
         setError(null);
@@ -69,7 +68,7 @@ export default function Products() {
           <p className="text-red-400 text-lg mb-2">{error}</p>
           <p className="text-sm text-gray-400">
             تحقق أن الـ backend يعمل على المنفذ الصحيح وأن الـ API متاح على{" "}
-            <code className="bg-black10 px-2 py-1 rounded">http://localhost:3000/api/product</code>
+            <code className="bg-black10 px-2 py-1 rounded">/product</code>
           </p>
         </div>
       </div>
@@ -78,11 +77,8 @@ export default function Products() {
 
   return (
     <div className="p-6">
-      {/* Header with Add button */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">All Products</h1>
-
-        {/* Add Product button (does NOT change API) */}
         <button
           onClick={() => navigate("/dashboard/add-product")}
           className="px-4 py-2 bg-brown70 text-white rounded-lg hover:bg-brown65 transition"
@@ -107,13 +103,17 @@ export default function Products() {
               />
               <h2 className="text-lg font-bold">{product.name}</h2>
               <p className="text-sm text-gray-400">{product.description}</p>
-              <p className="text-indigo-400 font-semibold mt-2">
-                ${product.price}
-              </p>
+              <p className="text-indigo-400 font-semibold mt-2">${product.price}</p>
               <p className="text-xs text-gray-500">
                 Category: {product.subCategory?.main?.name} → {product.subCategory?.name}
               </p>
               <p className="text-xs text-gray-500">In stock: {product.stock}</p>
+              <button
+                onClick={() => navigate(`/dashboard/product/${product.id}`)}
+                className="mt-3 w-full px-3 py-2 bg-brown70 text-white rounded-lg hover:bg-brown65 transition"
+              >
+                View Details
+              </button>
             </div>
           ))}
         </div>

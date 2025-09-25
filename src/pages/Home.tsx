@@ -34,7 +34,7 @@ export default function DashboardHome(): JSX.Element {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await api.get("/users");
+        const res = await api.get("/dashboard/users");
         setUsers(res.data?.users ?? []);
         setCurrentUserIndex(0);
       } catch (err) {

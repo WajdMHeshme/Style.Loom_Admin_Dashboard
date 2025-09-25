@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./pages/Auth/Login/Login";
@@ -18,35 +17,44 @@ import DashboardHome from "./pages/Home";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AddProduct from "./pages/AddProduct";
+import EditProduct from "./pages/EditProduct";
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Auth */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
+
+        {/* Protected Dashboard */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
+
+            {/* Products */}
             <Route path="products" element={<Products />} />
-            <Route path="add-product" element={<AddProduct />} /> {/* 👈 Route جديد */}
+            <Route path="product/:id" element={<ProductDetails />} />
+            <Route path="add-product" element={<AddProduct />} />
+            <Route path="edit-product/:id" element={<EditProduct />} />
+
+            {/* Categories */}
+            <Route path="categories">
+              <Route path="man" element={<Man />} />
+              <Route path="woman" element={<Woman />} />
+              <Route path="child" element={<Child />} />
+            </Route>
+
+            {/* Other Pages */}
             <Route path="overview" element={<Overview />} />
             <Route path="faq" element={<FAQ />} />
             <Route path="users" element={<Users />} />
             <Route path="orders" element={<Orders />} />
-            <Route path="categories">
-              <Route path="man" element={<Man />}>
-                <Route path="productdetails" element={<ProductDetails />} />
-              </Route>
-              <Route path="woman" element={<Woman />} />
-              <Route path="child" element={<Child />} />
-            </Route>
           </Route>
         </Route>
       </Routes>
-
-      <ToastContainer position="top-right" autoClose={3000} />
     </Router>
+
   );
 }
 

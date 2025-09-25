@@ -1,105 +1,116 @@
 // src/pages/AddProduct.tsx
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TbFileUpload } from "react-icons/tb";
-import api from "../api/Api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
+import api from "../api/Api"; // ← استخدمنا api.ts
 
-interface Category {
-  id: number;
-  name: string;
-  subCategories?: { id: number; name: string }[];
-}
-
-interface SubCategory {
-  id: number;
-  name: string;
-  main?: { id: number; name: string };
-}
+type SubCategory = { id: number; name: string; imageUrl?: string | null; createdAt?: string };
+type MainCategory = { id: number; name: string; imageUrl?: string | null; subCategories?: SubCategory[] };
 
 export default function AddProduct() {
-  const [name, setName] = useState("");
+  const navigate = useNavigate();
+  const [productName, setProductName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
-  const [subCategoryId, setSubCategoryId] = useState(""); // from select
+  const [mainCategoryId, setMainCategoryId] = useState<string>("");
+  const [subId, setSubId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [mainCategories, setMainCategories] = useState<MainCategory[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
-  const [loadingSubs, setLoadingSubs] = useState(true);
+  const [loadingCats, setLoadingCats] = useState(true);
 
-  // جلب التصنيفات من API
+  // ------------------------
+  // Fetch main categories
+  // ------------------------
   useEffect(() => {
-    api
-      .get("/sub") // ← هذا endpoint للحصول على كل التصنيفات + sub
+    setLoadingCats(true);
+    api.get("/categories/main") // ← استخدمنا api.ts
       .then((res) => {
-        const categories: Category[] = res.data;
-        // دمج جميع subCategories في مصفوفة واحدة
-        const allSubs: SubCategory[] = [];
-        categories.forEach((cat) => {
-          if (cat.subCategories?.length) {
-            cat.subCategories.forEach((sub) => {
-              allSubs.push({ id: sub.id, name: sub.name, main: { id: cat.id, name: cat.name } });
-            });
-          }
-        });
-        setSubCategories(allSubs);
+        setMainCategories(res.data || []);
       })
       .catch((err) => {
         console.error("Error fetching categories:", err);
-        toast.error("Failed to load categories");
-        setSubCategories([]);
+        toast.error(err?.response?.status === 401 ? "Unauthorized — please login." : "Failed to load categories.");
+        setMainCategories([]);
       })
-      .finally(() => setLoadingSubs(false));
+      .finally(() => setLoadingCats(false));
   }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      setFile(f);
-      setPreview(URL.createObjectURL(f));
+  // Update subCategories when mainCategory changes
+  useEffect(() => {
+    if (!mainCategoryId) {
+      setSubCategories([]);
+      setSubId("");
+      return;
     }
+    const main = mainCategories.find((m) => String(m.id) === mainCategoryId);
+    setSubCategories(main?.subCategories ?? []);
+    setSubId("");
+  }, [mainCategoryId, mainCategories]);
+
+  // Handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    if (!f) {
+      setFile(null);
+      setPreview(null);
+      return;
+    }
+    if (!f.type.startsWith("image/")) {
+      toast.error("Please select an image file.");
+      return;
+    }
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
   };
 
+  // Submit new product
   const handleSubmit = async () => {
-    if (!name || !price || !description || !file || !subCategoryId) {
-      toast.error("Please fill all fields and select a category + image.");
+    if (!productName.trim() || !price.trim() || !description.trim() || !file || !subId) {
+      toast.error("Please fill all fields, select sub category and upload an image.");
       return;
     }
 
-    const subIdNum = Number(subCategoryId);
-    if (!Number.isFinite(subIdNum) || Number.isNaN(subIdNum) || subIdNum <= 0) {
-      toast.error("SubCategory ID must be a valid positive number.");
-      return;
-    }
+    const priceNum = Number(price);
+    const stockNum = stock ? Number(stock) : 1;
+    const subIdNum = Number(subId);
+
+    if (!Number.isFinite(priceNum) || priceNum <= 0) return toast.error("Price must be positive.");
+    if (!Number.isFinite(stockNum) || stockNum < 0) return toast.error("Stock must be 0 or positive.");
+    if (!Number.isFinite(subIdNum) || subIdNum <= 0) return toast.error("Select a valid sub category.");
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("productName", productName.trim());
+    formData.append("subId", String(subIdNum));
+    formData.append("subCategoryId", String(subIdNum));
+    formData.append("description", description.trim());
+    formData.append("price", String(priceNum));
+    formData.append("stock", String(stockNum));
 
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description);
-      formData.append("price", String(Number(price)));
-      formData.append("stock", stock ? String(Number(stock)) : "1");
-      formData.append("subCategoryId", String(subIdNum));
-      formData.append("image", file);
+      const res = await api.post("/dashboard/pro", formData); // ← استخدمنا api.ts
+      toast.success(res.data?.message ?? "Product created!");
 
-      const res = await api.post("/pro", formData);
-      toast.success(res.data?.message || "Product created!");
-
-      // إعادة تعيين الحقول
-      setName("");
+      // Reset form
+      setProductName("");
       setPrice("");
       setDescription("");
       setStock("");
-      setSubCategoryId("");
+      setMainCategoryId("");
+      setSubId("");
       setFile(null);
-      setPreview(null);
+      setPreview(res.data?.product?.imageUrl ? `${window.location.origin}${res.data.product.imageUrl}` : null);
     } catch (err: any) {
       console.error("Error creating product:", err);
-      const serverMsg = err.response?.data?.message ?? JSON.stringify(err.response?.data) ?? err.message;
-      toast.error(serverMsg);
+      toast.error(err?.response?.data?.message ?? "Failed to add product");
     } finally {
       setLoading(false);
     }
@@ -117,9 +128,7 @@ export default function AddProduct() {
             htmlFor="product-image"
             className="w-full h-72 min-h-64 bg-black12 rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-brown70 cursor-pointer hover:bg-black10 transition"
           >
-            {preview ? (
-              <img src={preview} alt="Preview" className="object-contain h-full" />
-            ) : (
+            {preview ? <img src={preview} alt="Preview" className="object-contain h-full" /> : (
               <div className="flex flex-col items-center text-brown70">
                 <TbFileUpload size={28} />
                 <span className="text-sm mt-2">Upload Product Image</span>
@@ -133,92 +142,46 @@ export default function AddProduct() {
         <div className="flex-1 space-y-4 w-full md:w-[48%]">
           <div>
             <label className="block text-sm font-medium text-gray90">Product Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter product name"
-              className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90"
-            />
+            <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Enter product name" className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray90">Price</label>
-            <input
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="e.g. 25.00"
-              className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90"
-            />
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 25.00" className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray90">Stock</label>
-            <input
-              type="number"
-              value={stock}
-              onChange={(e) => setStock(e.target.value)}
-              placeholder="e.g. 10"
-              className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90"
-            />
+            <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="e.g. 10" className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90" />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray90">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Write a short description..."
-              rows={4}
-              className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90"
-            />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Write a short description..." rows={4} className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray90">Category (Sub)</label>
-            <select
-              value={subCategoryId}
-              onChange={(e) => setSubCategoryId(e.target.value)}
-              disabled={loadingSubs || subCategories.length === 0}
-              className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90"
-            >
-              <option value="">{loadingSubs ? "Loading categories..." : "Select category"}</option>
-              {subCategories.map((sub) => (
-                <option key={sub.id} value={sub.id}>
-                  {sub.main?.name ? `${sub.main.name} → ${sub.name}` : sub.name}
-                </option>
-              ))}
+            <label className="block text-sm font-medium text-gray90">Main Category</label>
+            <select value={mainCategoryId} onChange={(e) => setMainCategoryId(e.target.value)} className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90">
+              <option value="">{loadingCats ? "Loading categories..." : "Select main category"}</option>
+              {mainCategories.map((m) => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray90">Sub Category</label>
+            <select value={subId} onChange={(e) => setSubId(e.target.value)} disabled={!mainCategoryId || subCategories.length === 0} className="mt-1 w-full rounded-lg border border-gray50 bg-black12 px-3 py-2 text-sm text-gray90">
+              <option value="">{!mainCategoryId ? "Select main first" : subCategories.length ? "Select sub category" : "No sub categories"}</option>
+              {subCategories.map((s) => <option key={s.id} value={String(s.id)}>{s.name}</option>)}
             </select>
           </div>
         </div>
       </div>
 
       <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={() => {
-            setName("");
-            setPrice("");
-            setDescription("");
-            setStock("");
-            setPreview(null);
-            setFile(null);
-            setSubCategoryId("");
-          }}
-          className="px-4 py-2 rounded-lg border border-gray-300 text-white text-sm cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="px-4 py-2 rounded-lg bg-brown70 text-white hover:bg-brown65 transition cursor-pointer"
-        >
-          {loading ? "Adding..." : "Add Product"}
-        </button>
+        <button onClick={() => { setProductName(""); setPrice(""); setDescription(""); setStock(""); setPreview(null); setFile(null); setSubId(""); setMainCategoryId(""); navigate("/dashboard/products"); }} className="px-4 py-2 rounded-lg border border-gray-300 text-white text-sm cursor-pointer">Cancel</button>
+        <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 rounded-lg bg-brown70 text-white hover:bg-brown65 transition cursor-pointer">{loading ? "Adding..." : "Add Product"}</button>
       </div>
     </div>
   );
 }
-
-

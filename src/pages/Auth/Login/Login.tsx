@@ -33,7 +33,7 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const response = await api.post("/login", { email, password });
+      const response = await api.post("/auth/login", { email, password });
       const token = response.data.token;
 
       if (token) {
