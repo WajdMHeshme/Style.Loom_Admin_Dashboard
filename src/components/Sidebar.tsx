@@ -5,7 +5,6 @@ import { TbShoppingCartStar } from "react-icons/tb";
 import { LiaTshirtSolid } from "react-icons/lia";
 import { MdOutlineQuestionAnswer, MdOutlinePeople } from "react-icons/md";
 import { RiFileList3Line } from "react-icons/ri";
-import CategoryDropdown from "./CategoryDropdown";
 import { useEffect, useState } from "react";
 
 interface SidebarProps {
@@ -151,14 +150,6 @@ export default function Sidebar({
           </Link>
         ))}
 
-        <CategoryDropdown
-          collapsed={collapsed}
-          activeTab={activeTab}
-          onSelect={(value) => {
-            setActiveTab(value);
-            navigate(`/dashboard/categories/${value}`);
-          }}
-        />
       </nav>
 
       {/* Session timer + Logout */}

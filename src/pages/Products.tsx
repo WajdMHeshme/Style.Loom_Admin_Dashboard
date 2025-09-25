@@ -1,7 +1,7 @@
 // src/pages/Products.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/Api"; // ← استخدم الملف مباشرة
+import api from "../api/Api";
 
 interface Product {
   id: number;
@@ -21,8 +21,12 @@ interface Product {
   };
 }
 
+const categories = ["all", "woman", "man", "child"];
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,28 +34,30 @@ export default function Products() {
 
   useEffect(() => {
     api
-      .get("/product") // ← هنا استخدمنا api من ملف api.ts
+      .get("/product")
       .then((res) => {
         setProducts(res.data);
+        setFilteredProducts(res.data);
         setError(null);
       })
       .catch((err: any) => {
         console.error("Error fetching products:", err);
-
-        const status = err.response?.status;
-        const serverMessage =
-          typeof err.response?.data === "string"
-            ? (err.response?.data as string).replace(/<[^>]*>/g, "").slice(0, 200)
-            : err.response?.data?.message;
-
-        setError(
-          status
-            ? `Failed to load products (status ${status}). ${serverMessage ? "- " + serverMessage : ""}`
-            : "Failed to fetch products. Please check your network or server."
-        );
+        setError("Failed to fetch products. Please check your network or server.");
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (activeCategory === "all") {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(
+        products.filter(
+          (p) => p.subCategory?.main?.name.toLowerCase() === activeCategory
+        )
+      );
+    }
+  }, [activeCategory, products]);
 
   if (loading) {
     return (
@@ -64,21 +70,33 @@ export default function Products() {
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen px-4">
-        <div className="max-w-xl text-center">
-          <p className="text-red-400 text-lg mb-2">{error}</p>
-          <p className="text-sm text-gray-400">
-            تحقق أن الـ backend يعمل على المنفذ الصحيح وأن الـ API متاح على{" "}
-            <code className="bg-black10 px-2 py-1 rounded">/product</code>
-          </p>
-        </div>
+        <p className="text-red-400 text-lg">{error}</p>
       </div>
     );
   }
 
   return (
     <div className="p-6">
+      {/* Header: Tabs + Add Product */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">All Products</h1>
+        {/* Tabs على اليسار */}
+        <div className="flex gap-4">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded-lg transition ${
+                activeCategory === cat
+                  ? "bg-brown70 text-white"
+                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* زر Add Product على اليمين تمام مثل السابق */}
         <button
           onClick={() => navigate("/dashboard/add-product")}
           className="px-4 py-2 bg-brown70 text-white rounded-lg hover:bg-brown65 transition"
@@ -87,11 +105,12 @@ export default function Products() {
         </button>
       </div>
 
-      {products.length === 0 ? (
+      {/* Grid المنتجات */}
+      {filteredProducts.length === 0 ? (
         <p className="text-gray-400">No products found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <div
               key={product.id}
               className="bg-white/5 border border-white/10 rounded-xl p-4 shadow hover:shadow-lg transition"
