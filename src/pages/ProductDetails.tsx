@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { MdDeleteForever, MdModeEditOutline } from "react-icons/md";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import api from "../api/Api"; // ← استخدمنا api.ts
+import { TiArrowLeftThick } from "react-icons/ti";
+import api from "../api/Api";
 
 interface Product {
   id: number;
@@ -34,17 +35,15 @@ export default function ProductDetails() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Modal states for delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [animate, setAnimate] = useState(false);
 
-  // Fetch product
   useEffect(() => {
     if (!id) return;
     setLoading(true);
 
     api
-      .get(`/product/${id}`) // ← استخدام api.ts
+      .get(`/product/${id}`)
       .then((res) => {
         setProduct(res.data);
         setError(null);
@@ -56,25 +55,21 @@ export default function ProductDetails() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Open delete modal (replaces default window.confirm)
   const openDeleteModal = () => {
     setShowDeleteModal(true);
-    // small timeout to allow CSS transitions
     setTimeout(() => setAnimate(true), 20);
   };
 
   const closeDeleteModal = () => {
     setAnimate(false);
-    // wait for CSS animation to finish before hiding
     setTimeout(() => setShowDeleteModal(false), 220);
   };
 
-  // Actual delete action called from modal confirm
   const confirmDelete = async () => {
     if (!id) return;
     try {
       setDeleting(true);
-      const res = await api.delete(`/dashboard/pro/${id}`); // ← DELETE عبر api.ts
+      const res = await api.delete(`/dashboard/pro/${id}`);
       toast.success(res.data?.message || "Product deleted successfully");
       closeDeleteModal();
       navigate("/dashboard/products");
@@ -86,7 +81,6 @@ export default function ProductDetails() {
     }
   };
 
-  // Edit product — navigate to edit page
   const handleEdit = () => {
     if (!product) return;
     navigate(`/dashboard/edit-product/${product.id}`);
@@ -109,7 +103,21 @@ export default function ProductDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-black12 p-6 text-gray90">
+    <div className="relative min-h-screen bg-black12 p-6 text-gray90">
+      {/* زر العودة إلى صفحة المنتجات */}
+<button
+  onClick={() => navigate("/dashboard/products")}
+  className="group absolute top-6 right-6 flex items-center gap-1 bg-brown70 text-white px-4 py-2 rounded-lg transition duration-200 text-sm md:text-base cursor-pointer hover:bg-brown65"
+>
+  {/* السهم */}
+  <TiArrowLeftThick
+    size={25}
+    className="transform transition-transform duration-300 group-hover:-translate-x-1"
+  />
+  Back
+</button>
+
+
       <h1 className="text-2xl font-semibold text-white mb-1">Product Details</h1>
       <p className="text-gray50 mb-6">View and manage product information.</p>
 
@@ -126,9 +134,15 @@ export default function ProductDetails() {
         {/* Product Info */}
         <div className="p-6 md:w-1/2 flex flex-col justify-between">
           <div>
-            <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">{product.name}</h2>
-            <p className="text-sm md:text-base lg:text-lg text-gray50 mb-3">{product.description}</p>
-            <p className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-4">${product.price}</p>
+            <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
+              {product.name}
+            </h2>
+            <p className="text-sm md:text-base lg:text-lg text-gray50 mb-3">
+              {product.description}
+            </p>
+            <p className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-4">
+              ${product.price}
+            </p>
 
             <div className="space-y-6 text-xs md:text-sm lg:text-base text-gray70">
               <p>
@@ -176,7 +190,7 @@ export default function ProductDetails() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal (replaces default alert/confirm) */}
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300"
@@ -187,16 +201,22 @@ export default function ProductDetails() {
           <div
             onClick={(e) => e.stopPropagation()}
             className={`bg-black12 rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center text-center transform transition-all duration-300 ${
-              animate ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 -translate-y-6"
+              animate
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-90 -translate-y-6"
             }`}
           >
             <div className="rounded-full p-4 mb-4 text-center bg-red-600">
               <MdDeleteForever size={24} color="#ffffff" />
             </div>
 
-            <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Confirm Delete</h2>
+            <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
+              Confirm Delete
+            </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-              Are you sure you want to delete <span className="font-semibold">{product.name}</span>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{product.name}</span>? This action
+              cannot be undone.
             </p>
 
             <div className="flex gap-4 w-full">
