@@ -1,4 +1,3 @@
-// src/pages/ProductDetails.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MdDeleteForever, MdModeEditOutline } from "react-icons/md";
@@ -35,6 +34,10 @@ export default function ProductDetails() {
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Modal states for delete confirmation
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [animate, setAnimate] = useState(false);
+
   // Fetch product
   useEffect(() => {
     if (!id) return;
@@ -53,15 +56,27 @@ export default function ProductDetails() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Delete product
-  const handleDelete = async () => {
-    if (!id) return;
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+  // Open delete modal (replaces default window.confirm)
+  const openDeleteModal = () => {
+    setShowDeleteModal(true);
+    // small timeout to allow CSS transitions
+    setTimeout(() => setAnimate(true), 20);
+  };
 
+  const closeDeleteModal = () => {
+    setAnimate(false);
+    // wait for CSS animation to finish before hiding
+    setTimeout(() => setShowDeleteModal(false), 220);
+  };
+
+  // Actual delete action called from modal confirm
+  const confirmDelete = async () => {
+    if (!id) return;
     try {
       setDeleting(true);
       const res = await api.delete(`/dashboard/pro/${id}`); // ← DELETE عبر api.ts
       toast.success(res.data?.message || "Product deleted successfully");
+      closeDeleteModal();
       navigate("/dashboard/products");
     } catch (err: any) {
       console.error("Delete error:", err);
@@ -150,7 +165,7 @@ export default function ProductDetails() {
             </button>
 
             <button
-              onClick={handleDelete}
+              onClick={openDeleteModal}
               disabled={deleting}
               className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm md:text-base cursor-pointer"
             >
@@ -160,6 +175,49 @@ export default function ProductDetails() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal (replaces default alert/confirm) */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300"
+          aria-modal="true"
+          role="dialog"
+          onClick={closeDeleteModal}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-black12 rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center text-center transform transition-all duration-300 ${
+              animate ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 -translate-y-6"
+            }`}
+          >
+            <div className="rounded-full p-4 mb-4 text-center bg-red-600">
+              <MdDeleteForever size={24} color="#ffffff" />
+            </div>
+
+            <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">Confirm Delete</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to delete <span className="font-semibold">{product.name}</span>? This action cannot be undone.
+            </p>
+
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white hover:bg-red-700 transition"
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

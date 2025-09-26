@@ -42,7 +42,7 @@ export default function DashboardHome(): JSX.Element {
         setCurrentUserIndex(0);
       } catch (err) {
         console.error("Error fetching users:", err);
-        setError("فشل في جلب المستخدمين");
+        setError("Some Thing Wrong!");
       } finally {
         const elapsed = Date.now() - start;
         const delay = elapsed < 3000 ? 3000 - elapsed : 0;
@@ -80,7 +80,7 @@ export default function DashboardHome(): JSX.Element {
       setCurrentUserIndex(0);
     } catch (err) {
       console.error(err);
-      setError("فشل في جلب المستخدمين");
+      setError("Some Thing Wrong!");
     } finally {
       const elapsed = Date.now() - start;
       const delay = elapsed < 3000 ? 3000 - elapsed : 0;
