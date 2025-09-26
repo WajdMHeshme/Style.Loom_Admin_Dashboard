@@ -1,7 +1,10 @@
 // src/pages/Products.tsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/Api";
+import LoadingWave from "../utils/waveLoader/WaveLoader"; // ⬅️ استدعاء اللودر
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Product {
   id: number;
@@ -31,20 +34,55 @@ export default function Products() {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // --- show toast if location.state contains a toast object (coming from CRUD pages) ---
+  useEffect(() => {
+    // location.state can be anything; cast safely
+    const anyState = (location.state as any) ?? {};
+    if (anyState.toast && anyState.toast.message) {
+      const { type = "success", message = "" } = anyState.toast;
+      // choose toast method by type
+      switch (type) {
+        case "error":
+        case "danger":
+          toast.error(message);
+          break;
+        case "info":
+          toast.info(message);
+          break;
+        case "warn":
+        case "warning":
+          toast.warn(message);
+          break;
+        default:
+          toast.success(message);
+      }
+      // remove the toast state so it doesn't show again on refresh / re-mount
+      // replace keeps user on same URL without the state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
 
   useEffect(() => {
-    api
-      .get("/product")
-      .then((res) => {
+    const fetchProducts = async () => {
+      const start = Date.now();
+      try {
+        const res = await api.get("/product");
         setProducts(res.data);
         setFilteredProducts(res.data);
         setError(null);
-      })
-      .catch((err: any) => {
+      } catch (err: any) {
         console.error("Error fetching products:", err);
         setError("Failed to fetch products. Please check your network or server.");
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        const elapsed = Date.now() - start;
+        const delay = elapsed < 3000 ? 3000 - elapsed : 0; // ⬅️ ضمان 3 ثوانٍ
+        setTimeout(() => setLoading(false), delay);
+      }
+    };
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -62,7 +100,7 @@ export default function Products() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-lg">Loading products...</p>
+        <LoadingWave /> {/* ⬅️ اللودر بمنتصف الصفحة */}
       </div>
     );
   }
@@ -77,9 +115,22 @@ export default function Products() {
 
   return (
     <div className="p-6">
+      {/* Toast container (global for this page) */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+
       {/* Header: Tabs + Add Product */}
       <div className="flex justify-between items-center mb-6">
-        {/* Tabs على اليسار */}
         <div className="flex gap-4">
           {categories.map((cat) => (
             <button
@@ -95,8 +146,6 @@ export default function Products() {
             </button>
           ))}
         </div>
-
-        {/* زر Add Product على اليمين تمام مثل السابق */}
         <button
           onClick={() => navigate("/dashboard/add-product")}
           className="px-4 py-2 bg-brown70 text-white rounded-lg hover:bg-brown65 transition"

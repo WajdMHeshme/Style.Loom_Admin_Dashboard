@@ -100,7 +100,7 @@ export default function ProductDetails() {
 
       <div className="bg-black15 rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row">
         {/* Product Image */}
-        <div className="bg-black10 flex items-center justify-center border-2 border-dashed border-brown70 border-b-0 md:border-b-2 md:border-r-0 md:w-1/2">
+        <div className="bg-black10 flex items-center justify-center  md:w-1/2">
           <img
             src={`http://localhost:3000${product.imageUrl}`}
             alt={product.name}

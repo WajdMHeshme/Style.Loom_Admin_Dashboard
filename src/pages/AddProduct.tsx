@@ -30,7 +30,7 @@ export default function AddProduct() {
   // ------------------------
   useEffect(() => {
     setLoadingCats(true);
-    api.get("/categories/main") // ← استخدمنا api.ts
+    api.get("/categories/main")
       .then((res) => {
         setMainCategories(res.data || []);
       })
@@ -96,18 +96,18 @@ export default function AddProduct() {
 
     try {
       setLoading(true);
-      const res = await api.post("/dashboard/pro", formData); // ← استخدمنا api.ts
-      toast.success(res.data?.message ?? "Product created!");
+      const res = await api.post("/dashboard/pro", formData);
 
-      // Reset form
-      setProductName("");
-      setPrice("");
-      setDescription("");
-      setStock("");
-      setMainCategoryId("");
-      setSubId("");
-      setFile(null);
-      setPreview(res.data?.product?.imageUrl ? `${window.location.origin}${res.data.product.imageUrl}` : null);
+      // === هنا نعمل روتنج لصفحة المنتجات ونمرر رسالة التوست كـ state ===
+      navigate("/dashboard/products", {
+        state: {
+          toast: {
+            type: "success",
+            message: res.data?.message ?? "Product created successfully",
+          },
+        },
+      });
+      // لا داعي لعمل toast هنا لأن صفحة Products ستعرض التوست من state
     } catch (err: any) {
       console.error("Error creating product:", err);
       toast.error(err?.response?.data?.message ?? "Failed to add product");

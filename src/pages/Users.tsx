@@ -1,4 +1,3 @@
-// Users.tsx
 import { useEffect, useState } from "react";
 import api from "../api/Api";
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
@@ -7,6 +6,7 @@ import { GrUserAdmin } from "react-icons/gr";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import RoleDropdown from "../components/RoleDropdown";
+import UserLoader from "../utils/UserLoader"
 
 interface User {
   id: number;
@@ -30,6 +30,7 @@ export default function Users() {
   const [saving, setSaving] = useState(false);
 
   const fetchUsers = async () => {
+    const start = Date.now();
     try {
       const res = await api.get("/dashboard/users");
       setUsers(res.data.users);
@@ -37,13 +38,20 @@ export default function Users() {
       console.error("Error fetching users:", err);
       toast.error("❌ Failed to fetch users");
     } finally {
-      setLoading(false);
+      const elapsed = Date.now() - start;
+      const minDelay = 3000;
+      const remaining = minDelay - elapsed;
+      if (remaining > 0) {
+        setTimeout(() => setLoading(false), remaining);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   const deleteUser = async (id: number) => {
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`dashboard/users/${id}`);
       setUsers(users.filter((u) => u.id !== id));
       toast.success("User deleted successfully");
       closeModal();
@@ -97,7 +105,14 @@ export default function Users() {
     fetchUsers();
   }, []);
 
-  if (loading) return <p className="p-4">Loading...</p>;
+  if (loading)
+    return (
+      <div className="p-6 flex flex-col gap-4">
+        {Array.from({ length: users.length || 3 }).map((_, i) => (
+          <UserLoader key={i} />
+        ))}
+      </div>
+    );
 
   const getRoleIcon = (role: string) => {
     if (role === "admin") return <GrUserAdmin className="text-brown70" />;
@@ -107,62 +122,63 @@ export default function Users() {
   return (
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">Users List</h1>
-{users.map((u) => (
-  <div
-    key={u.id}
-    className="relative border border-[#333] rounded-lg p-4 bg-black15 text-gray-100 shadow-sm hover:shadow-md transition mb-4 flex flex-wrap justify-between items-center"
-  >
-    {/* Role Icon Badge at corner */}
-    <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center rounded-full">
-      {getRoleIcon(u.role)}
-    </div>
 
-    {/* User info */}
-    <div className="flex flex-wrap gap-6 items-center">
-      <p>
-        <span className="font-semibold">ID:</span> {u.id}
-      </p>
-      <p>
-        <span className="font-semibold">Name:</span> {u.first_name} {u.last_name}
-      </p>
-      <p>
-        <span className="font-semibold">Email:</span> {u.email}
-      </p>
-      <p>
-        <span className="font-semibold">Role:</span> {u.role}
-      </p>
-      <p>
-        <span className="font-semibold">Created At:</span>{" "}
-        {new Date(u.createdAt).toLocaleString("en-u-nu-arab", {
-          year: "numeric",
-          month: "numeric",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-          second: "numeric",
-          hour12: true,
-        })}
-      </p>
-    </div>
+      {users.map((u) => (
+        <div
+          key={u.id}
+          className="relative border border-[#333] rounded-lg p-4 bg-black15 text-gray-100 shadow-sm hover:shadow-md transition mb-4 flex flex-wrap justify-between items-center"
+        >
+          {/* Role Icon Badge at corner */}
+          <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center rounded-full">
+            {getRoleIcon(u.role)}
+          </div>
 
-    {/* Actions */}
-    <div className="flex gap-2 items-center mt-2 sm:mt-4">
-      <button
-        onClick={() => openDeleteModal(u)}
-        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
-      >
-        <AiOutlineDelete /> Delete
-      </button>
-      <button
-        onClick={() => openRoleModal(u)}
-        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
-      >
-        <AiOutlineEdit /> Change Role
-      </button>
-    </div>
-  </div>
-))}
+          {/* User info */}
+          <div className="flex flex-wrap gap-6 items-center">
+            <p>
+              <span className="font-semibold">ID:</span> {u.id}
+            </p>
+            <p>
+              <span className="font-semibold">Name:</span> {u.first_name}{" "}
+              {u.last_name}
+            </p>
+            <p>
+              <span className="font-semibold">Email:</span> {u.email}
+            </p>
+            <p>
+              <span className="font-semibold">Role:</span> {u.role}
+            </p>
+            <p>
+              <span className="font-semibold">Created At:</span>{" "}
+              {new Date(u.createdAt).toLocaleString("en-u-nu-arab", {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+                second: "numeric",
+                hour12: true,
+              })}
+            </p>
+          </div>
 
+          {/* Actions */}
+          <div className="flex gap-2 items-center mt-2 sm:mt-4">
+            <button
+              onClick={() => openDeleteModal(u)}
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+            >
+              <AiOutlineDelete /> Delete
+            </button>
+            <button
+              onClick={() => openRoleModal(u)}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+            >
+              <AiOutlineEdit /> Change Role
+            </button>
+          </div>
+        </div>
+      ))}
 
       {/* Animated Modal */}
       {showModal && selectedUser && (
@@ -192,7 +208,10 @@ export default function Users() {
                 </h2>
                 <RoleDropdown value={newRole} onChange={setNewRole} />
                 <div className="flex justify-end gap-2 mt-4">
-                  <button onClick={closeModal} className="px-4 py-2 text-white">
+                  <button
+                    onClick={closeModal}
+                    className="px-4 py-2 text-white"
+                  >
                     Cancel
                   </button>
                   <button
