@@ -74,7 +74,7 @@ export default function AddProduct() {
   const handleSubmit = async () => {
     if (!productName.trim() || !price.trim() || !description.trim() || !file || !subId) {
       toast.error("Please fill all fields, select sub category and upload an image.");
-      navigate('/products');
+      navigate('/dashboard/products');
       return;
     }
 
