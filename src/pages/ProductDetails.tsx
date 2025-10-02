@@ -1,59 +1,33 @@
+// src/pages/ProductDetails.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MdDeleteForever, MdModeEditOutline } from "react-icons/md";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { TiArrowLeftThick } from "react-icons/ti";
-import api from "../api/Api";
-
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  imageUrl: string;
-  price: number;
-  stock: number;
-  subCategory: {
-    name: string;
-    main: {
-      name: string;
-    };
-  };
-  reviews?: {
-    id: number;
-    rating: number;
-    comment: string;
-    createdAt: string;
-  }[];
-}
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { fetchProductById, deleteProduct, clearCurrentProduct } from "../redux/features/productsSlice";
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const dispatch = useAppDispatch();
+
+  const product = useAppSelector((s) => s.products.currentProduct);
+  const currentStatus = useAppSelector((s) => s.products.status);
+  const currentError = useAppSelector((s) => s.products.error);
+  const deleteStatus = useAppSelector((s) => s.products.deleteStatus);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-
-    api
-      .get(`/product/${id}`)
-      .then((res) => {
-        setProduct(res.data);
-        setError(null);
-      })
-      .catch((err: any) => {
-        console.error("Error fetching product:", err);
-        setError("Failed to load product. Please check your network or API.");
-      })
-      .finally(() => setLoading(false));
-  }, [id]);
+    dispatch(fetchProductById(id));
+    return () => {
+      dispatch(clearCurrentProduct());
+    };
+  }, [dispatch, id]);
 
   const openDeleteModal = () => {
     setShowDeleteModal(true);
@@ -68,16 +42,14 @@ export default function ProductDetails() {
   const confirmDelete = async () => {
     if (!id) return;
     try {
-      setDeleting(true);
-      const res = await api.delete(`/dashboard/pro/${id}`);
-      toast.success(res.data?.message || "Product deleted successfully");
+      const deletedId = await dispatch(deleteProduct(id)).unwrap();
+      toast.success("Product deleted successfully");
       closeDeleteModal();
       navigate("/dashboard/products");
     } catch (err: any) {
       console.error("Delete error:", err);
-      toast.error(err?.response?.data?.message || "Failed to delete product");
-    } finally {
-      setDeleting(false);
+      const errMsg = typeof err === "string" ? err : err?.message ?? "Failed to delete product";
+      toast.error(errMsg);
     }
   };
 
@@ -86,7 +58,7 @@ export default function ProductDetails() {
     navigate(`/dashboard/edit-product/${product.id}`);
   };
 
-  if (loading) {
+  if (currentStatus === "loading") {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <p className="text-lg text-gray-400">Loading product...</p>
@@ -94,10 +66,10 @@ export default function ProductDetails() {
     );
   }
 
-  if (error || !product) {
+  if (currentStatus === "failed" || !product) {
     return (
       <div className="flex justify-center items-center min-h-screen px-4">
-        <p className="text-red-400 text-lg">{error || "Product not found."}</p>
+        <p className="text-red-400 text-lg">{currentError || "Product not found."}</p>
       </div>
     );
   }
@@ -105,18 +77,17 @@ export default function ProductDetails() {
   return (
     <div className="relative min-h-screen bg-black12 p-6 text-gray90">
       {/* زر العودة إلى صفحة المنتجات */}
-<button
-  onClick={() => navigate("/dashboard/products")}
-  className="group absolute top-6 right-6 flex items-center gap-1 bg-brown70 text-white px-4 py-2 rounded-lg transition duration-200 text-sm md:text-base cursor-pointer hover:bg-brown65"
->
-  {/* السهم */}
-  <TiArrowLeftThick
-    size={25}
-    className="transform transition-transform duration-300 group-hover:-translate-x-1"
-  />
-  Back
-</button>
-
+      <button
+        onClick={() => navigate("/dashboard/products")}
+        className="group absolute top-6 right-6 flex items-center gap-1 bg-brown70 text-white px-4 py-2 rounded-lg transition duration-200 text-sm md:text-base cursor-pointer hover:bg-brown65"
+      >
+        {/* السهم */}
+        <TiArrowLeftThick
+          size={25}
+          className="transform transition-transform duration-300 group-hover:-translate-x-1"
+        />
+        Back
+      </button>
 
       <h1 className="text-2xl font-semibold text-white mb-1">Product Details</h1>
       <p className="text-gray50 mb-6">View and manage product information.</p>
@@ -125,8 +96,8 @@ export default function ProductDetails() {
         {/* Product Image */}
         <div className="bg-black10 flex items-center justify-center  md:w-1/2">
           <img
-            src={`http://localhost:3000${product.imageUrl}`}
-            alt={product.name}
+            src={product.imageUrl ? `http://localhost:3000${product.imageUrl}` : "/placeholder.png"}
+            alt={product.name ?? product.productName}
             className="w-full object-contain max-h-[500px]"
           />
         </div>
@@ -135,7 +106,7 @@ export default function ProductDetails() {
         <div className="p-6 md:w-1/2 flex flex-col justify-between">
           <div>
             <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
-              {product.name}
+              {product.name ?? product.productName}
             </h2>
             <p className="text-sm md:text-base lg:text-lg text-gray50 mb-3">
               {product.description}
@@ -180,11 +151,11 @@ export default function ProductDetails() {
 
             <button
               onClick={openDeleteModal}
-              disabled={deleting}
+              disabled={deleteStatus === "loading"}
               className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm md:text-base cursor-pointer"
             >
               <MdDeleteForever size={20} />
-              {deleting ? "Deleting..." : "Delete Product"}
+              {deleteStatus === "loading" ? "Deleting..." : "Delete Product"}
             </button>
           </div>
         </div>
@@ -200,11 +171,8 @@ export default function ProductDetails() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`bg-black12 rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center text-center transform transition-all duration-300 ${
-              animate
-                ? "opacity-100 scale-100 translate-y-0"
-                : "opacity-0 scale-90 -translate-y-6"
-            }`}
+            className={`bg-black12 rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center text-center transform transition-all duration-300 ${animate ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 -translate-y-6"
+              }`}
           >
             <div className="rounded-full p-4 mb-4 text-center bg-red-600">
               <MdDeleteForever size={24} color="#ffffff" />
@@ -215,7 +183,7 @@ export default function ProductDetails() {
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
               Are you sure you want to delete{" "}
-              <span className="font-semibold">{product.name}</span>? This action
+              <span className="font-semibold">{product.name ?? product.productName}</span>? This action
               cannot be undone.
             </p>
 
@@ -223,16 +191,16 @@ export default function ProductDetails() {
               <button
                 onClick={closeDeleteModal}
                 className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                disabled={deleting}
+                disabled={deleteStatus === "loading"}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 className="flex-1 py-2 rounded-lg bg-red-500 text-white hover:bg-red-700 transition"
-                disabled={deleting}
+                disabled={deleteStatus === "loading"}
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleteStatus === "loading" ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

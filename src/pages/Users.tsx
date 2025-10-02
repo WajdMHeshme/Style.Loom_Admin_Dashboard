@@ -1,27 +1,35 @@
+// src/pages/Users.tsx
 import { useEffect, useState } from "react";
-import api from "../api/Api";
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import { FaUserLargeSlash, FaUser } from "react-icons/fa6";
 import { GrUserAdmin } from "react-icons/gr";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import RoleDropdown from "../components/RoleDropdown";
-import UserLoader from "../utils/UserLoader"
+import UserLoader from "../utils/UserLoader";
+
+import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { fetchUsers, deleteUser, updateUserRole, setUserRoleLocal } from "../redux/features/usersSlice";
 
 interface User {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  createdAt: string;
+  id: number | string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  role?: string;
+  createdAt?: string;
 }
 
 type ModalType = "role" | "delete";
 
 export default function Users() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+
+  const users = useAppSelector((s) => s.users.items);
+  const loading = useAppSelector((s) => s.users.status === "loading");
+  const deleteStatus = useAppSelector((s) => s.users.deleteStatus);
+  const updateStatus = useAppSelector((s) => s.users.updateStatus);
+
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState("user");
@@ -29,61 +37,13 @@ export default function Users() {
   const [modalType, setModalType] = useState<ModalType>("role");
   const [saving, setSaving] = useState(false);
 
-  const fetchUsers = async () => {
-    const start = Date.now();
-    try {
-      const res = await api.get("/dashboard/users");
-      setUsers(res.data.users);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      toast.error("❌ Failed to fetch users");
-    } finally {
-      const elapsed = Date.now() - start;
-      const minDelay = 3000;
-      const remaining = minDelay - elapsed;
-      if (remaining > 0) {
-        setTimeout(() => setLoading(false), remaining);
-      } else {
-        setLoading(false);
-      }
-    }
-  };
-
-  const deleteUser = async (id: number) => {
-    try {
-      await api.delete(`dashboard/users/${id}`);
-      setUsers(users.filter((u) => u.id !== id));
-      toast.success("User deleted successfully");
-      closeModal();
-    } catch (err) {
-      console.error("Error deleting user:", err);
-      toast.error("Failed to delete user");
-    }
-  };
-
-  const updateUserRole = async () => {
-    if (!selectedUser) return;
-    try {
-      setSaving(true);
-      await api.patch(`/users/${selectedUser.id}`, { role: newRole });
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id ? { ...u, role: newRole } : u
-        )
-      );
-      toast.success("Role updated successfully");
-      closeModal();
-    } catch (err) {
-      console.error("Error updating role:", err);
-      toast.error("Failed to update role");
-    } finally {
-      setSaving(false);
-    }
-  };
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   const openRoleModal = (user: User) => {
     setSelectedUser(user);
-    setNewRole(user.role);
+    setNewRole(user.role ?? "user");
     setModalType("role");
     setShowModal(true);
     setTimeout(() => setAnimateModal(true), 10);
@@ -101,9 +61,49 @@ export default function Users() {
     setTimeout(() => setShowModal(false), 200);
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const handleDelete = async (id: number | string) => {
+    try {
+      await dispatch(deleteUser(id)).unwrap();
+      toast.success("User deleted successfully");
+      closeModal();
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      const msg = typeof err === "string" ? err : err?.message ?? "Failed to delete user";
+      toast.error(msg);
+    }
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedUser) return;
+    try {
+      setSaving(true);
+      const result = await dispatch(updateUserRole({ id: selectedUser.id, role: newRole })).unwrap();
+      // result should be the updated user object (see slice's thunk)
+      // If for any reason the reducer didn't update (e.g., API returned only message),
+      // we apply a local fallback update to ensure UI shows the new role immediately.
+      // Check whether store contains the updated role:
+      const updatedInStore = (dispatch as any)
+        ? undefined
+        : undefined; // noop — we'll check via selector below
+
+      // Fallback: dispatch local update to be safe
+      dispatch(setUserRoleLocal({ id: selectedUser.id, role: newRole }));
+
+      toast.success("Role updated successfully");
+      closeModal();
+    } catch (err: any) {
+      console.error("Update role error:", err);
+      const msg = typeof err === "string" ? err : err?.message ?? "Failed to update role";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getRoleIcon = (role: string | undefined) => {
+    if (role === "admin") return <GrUserAdmin className="text-brown70" />;
+    return <FaUser className="text-blue-400" />;
+  };
 
   if (loading)
     return (
@@ -113,11 +113,6 @@ export default function Users() {
         ))}
       </div>
     );
-
-  const getRoleIcon = (role: string) => {
-    if (role === "admin") return <GrUserAdmin className="text-brown70" />;
-    return <FaUser className="text-blue-400" />;
-  };
 
   return (
     <div className="p-6">
@@ -139,8 +134,7 @@ export default function Users() {
               <span className="font-semibold">ID:</span> {u.id}
             </p>
             <p>
-              <span className="font-semibold">Name:</span> {u.first_name}{" "}
-              {u.last_name}
+              <span className="font-semibold">Name:</span> {u.first_name ?? ""} {u.last_name ?? ""}
             </p>
             <p>
               <span className="font-semibold">Email:</span> {u.email}
@@ -150,15 +144,17 @@ export default function Users() {
             </p>
             <p>
               <span className="font-semibold">Created At:</span>{" "}
-              {new Date(u.createdAt).toLocaleString("en-u-nu-arab", {
-                year: "numeric",
-                month: "numeric",
-                day: "numeric",
-                hour: "numeric",
-                minute: "numeric",
-                second: "numeric",
-                hour12: true,
-              })}
+              {u.createdAt
+                ? new Date(u.createdAt).toLocaleString("en-u-nu-arab", {
+                  year: "numeric",
+                  month: "numeric",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                  second: "numeric",
+                  hour12: true,
+                })
+                : "-"}
             </p>
           </div>
 
@@ -183,63 +179,48 @@ export default function Users() {
       {/* Animated Modal */}
       {showModal && selectedUser && (
         <div
-          className={`fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${
-            animateModal ? "opacity-100" : "opacity-0"
-          }`}
+          className={`fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${animateModal ? "opacity-100" : "opacity-0"
+            }`}
         >
           <div
-            className={`bg-black15 text-white p-6 rounded-lg w-80 shadow-lg transform transition-all duration-200 ${
-              animateModal ? "scale-100 opacity-100" : "scale-90 opacity-0"
-            }`}
+            className={`bg-black15 text-white p-6 rounded-lg w-80 shadow-lg transform transition-all duration-200 ${animateModal ? "scale-100 opacity-100" : "scale-90 opacity-0"
+              }`}
           >
-            {/* Icon */}
             <div className="flex justify-center mb-4 text-4xl">
-              {modalType === "role" ? (
-                <GrUserAdmin className="text-brown70" />
-              ) : (
-                <FaUserLargeSlash className="text-red-500" />
-              )}
+              {modalType === "role" ? <GrUserAdmin className="text-brown70" /> : <FaUserLargeSlash className="text-red-500" />}
             </div>
 
             {modalType === "role" ? (
               <>
-                <h2 className="text-lg font-bold mb-4">
-                  Change Role for {selectedUser.first_name}
-                </h2>
+                <h2 className="text-lg font-bold mb-4">Change Role for {selectedUser.first_name}</h2>
                 <RoleDropdown value={newRole} onChange={setNewRole} />
                 <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={closeModal}
-                    className="px-4 py-2 text-white"
-                  >
+                  <button onClick={closeModal} className="px-4 py-2 text-white">
                     Cancel
                   </button>
                   <button
-                    onClick={updateUserRole}
-                    disabled={saving}
+                    onClick={handleUpdateRole}
+                    disabled={saving || updateStatus === "loading"}
                     className="px-4 py-2 bg-brown70 rounded hover:bg-brown65 disabled:opacity-50"
                   >
-                    {saving ? "Saving..." : "Save"}
+                    {saving || updateStatus === "loading" ? "Saving..." : "Save"}
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <h2 className="text-lg font-bold mb-4 text-red-500">
-                  Confirm Delete
-                </h2>
-                <p className="mb-4">
-                  Are you sure you want to delete {selectedUser.first_name}?
-                </p>
+                <h2 className="text-lg font-bold mb-4 text-red-500">Confirm Delete</h2>
+                <p className="mb-4">Are you sure you want to delete {selectedUser.first_name}?</p>
                 <div className="flex justify-end gap-2">
                   <button onClick={closeModal} className="px-4 py-2">
                     Cancel
                   </button>
                   <button
-                    onClick={() => deleteUser(selectedUser.id)}
+                    onClick={() => handleDelete(selectedUser.id)}
                     className="px-4 py-2 bg-red-500 rounded hover:bg-red-600"
+                    disabled={deleteStatus === "loading"}
                   >
-                    Delete
+                    {deleteStatus === "loading" ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </>
