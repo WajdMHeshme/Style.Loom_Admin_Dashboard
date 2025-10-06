@@ -25,7 +25,7 @@ type ModalType = "role" | "delete";
 export default function Users() {
   const dispatch = useAppDispatch();
 
-  const users = useAppSelector((s) => s.users.items);
+  const users = useAppSelector((s) => s.users.items) as User[] | undefined;
   const loading = useAppSelector((s) => s.users.status === "loading");
   const deleteStatus = useAppSelector((s) => s.users.deleteStatus);
   const updateStatus = useAppSelector((s) => s.users.updateStatus);
@@ -36,6 +36,10 @@ export default function Users() {
   const [animateModal, setAnimateModal] = useState(false);
   const [modalType, setModalType] = useState<ModalType>("role");
   const [saving, setSaving] = useState(false);
+
+  // --- pagination state (same behavior as Products.tsx)
+  const itemsPerPage = 4; // عدد العناصر لكل صفحة (مثل صفحة المنتجات)
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -78,17 +82,8 @@ export default function Users() {
     try {
       setSaving(true);
       const result = await dispatch(updateUserRole({ id: selectedUser.id, role: newRole })).unwrap();
-      // result should be the updated user object (see slice's thunk)
-      // If for any reason the reducer didn't update (e.g., API returned only message),
-      // we apply a local fallback update to ensure UI shows the new role immediately.
-      // Check whether store contains the updated role:
-      const updatedInStore = (dispatch as any)
-        ? undefined
-        : undefined; // noop — we'll check via selector below
-
-      // Fallback: dispatch local update to be safe
+      // fallback local update to ensure UI updates immediately
       dispatch(setUserRoleLocal({ id: selectedUser.id, role: newRole }));
-
       toast.success("Role updated successfully");
       closeModal();
     } catch (err: any) {
@@ -105,10 +100,31 @@ export default function Users() {
     return <FaUser className="text-blue-400" />;
   };
 
+  // --- prepare pagination data
+  const usersList = users ?? [];
+  const totalItems = usersList.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  // ensure currentPage is valid when totalPages changes (e.g., after delete or fetch)
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  // reset to first page when the data changes (similar to Products)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [totalItems]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = usersList.slice(startIndex, endIndex);
+
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
   if (loading)
     return (
       <div className="p-6 flex flex-col gap-4">
-        {Array.from({ length: users.length || 3 }).map((_, i) => (
+        {Array.from({ length: usersList.length || 3 }).map((_, i) => (
           <UserLoader key={i} />
         ))}
       </div>
@@ -118,73 +134,118 @@ export default function Users() {
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">Users List</h1>
 
-      {users.map((u) => (
-        <div
-          key={u.id}
-          className="relative border border-[#333] rounded-lg p-4 bg-black15 text-gray-100 shadow-sm hover:shadow-md transition mb-4 flex flex-wrap justify-between items-center"
-        >
-          {/* Role Icon Badge at corner */}
-          <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center rounded-full">
-            {getRoleIcon(u.role)}
-          </div>
-
-          {/* User info */}
-          <div className="flex flex-wrap gap-6 items-center">
-            <p>
-              <span className="font-semibold">ID:</span> {u.id}
-            </p>
-            <p>
-              <span className="font-semibold">Name:</span> {u.first_name ?? ""} {u.last_name ?? ""}
-            </p>
-            <p>
-              <span className="font-semibold">Email:</span> {u.email}
-            </p>
-            <p>
-              <span className="font-semibold">Role:</span> {u.role}
-            </p>
-            <p>
-              <span className="font-semibold">Created At:</span>{" "}
-              {u.createdAt
-                ? new Date(u.createdAt).toLocaleString("en-u-nu-arab", {
-                  year: "numeric",
-                  month: "numeric",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "numeric",
-                  second: "numeric",
-                  hour12: true,
-                })
-                : "-"}
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2 items-center mt-2 sm:mt-4">
-            <button
-              onClick={() => openDeleteModal(u)}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+      {totalItems === 0 ? (
+        <p className="text-gray-400">No users found.</p>
+      ) : (
+        <>
+          {paginatedUsers.map((u) => (
+            <div
+              key={u.id}
+              className="relative border border-[#333] rounded-lg p-4 bg-black15 text-gray-100 shadow-sm hover:shadow-md transition mb-4 flex flex-wrap justify-between items-center"
             >
-              <AiOutlineDelete /> Delete
-            </button>
-            <button
-              onClick={() => openRoleModal(u)}
-              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
-            >
-              <AiOutlineEdit /> Change Role
-            </button>
+              {/* Role Icon Badge at corner */}
+              <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center rounded-full">
+                {getRoleIcon(u.role)}
+              </div>
+
+              {/* User info */}
+              <div className="flex flex-wrap gap-6 items-center">
+                <p>
+                  <span className="font-semibold">ID:</span> {u.id}
+                </p>
+                <p>
+                  <span className="font-semibold">Name:</span> {u.first_name ?? ""} {u.last_name ?? ""}
+                </p>
+                <p>
+                  <span className="font-semibold">Email:</span> {u.email}
+                </p>
+                <p>
+                  <span className="font-semibold">Role:</span> {u.role}
+                </p>
+                <p>
+                  <span className="font-semibold">Created At:</span>{" "}
+                  {u.createdAt
+                    ? new Date(u.createdAt).toLocaleString("en-u-nu-arab", {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "numeric",
+                        second: "numeric",
+                        hour12: true,
+                      })
+                    : "-"}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 items-center mt-2 sm:mt-4">
+                <button
+                  onClick={() => openDeleteModal(u)}
+                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1"
+                >
+                  <AiOutlineDelete /> Delete
+                </button>
+                <button
+                  onClick={() => openRoleModal(u)}
+                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-1"
+                >
+                  <AiOutlineEdit /> Change Role
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* pagination controls (copied behavior from Products.tsx) */}
+          <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-400">
+              Showing <span className="text-white">{Math.min(startIndex + 1, totalItems)}</span>
+              {" — "}
+              <span className="text-white">{Math.min(endIndex, totalItems)}</span>
+              {" of "}
+              <span className="text-white">{totalItems}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md border border-white/10 ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}`}
+              >
+                Prev
+              </button>
+
+              <div className="flex items-center gap-1">
+                {pageNumbers.map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setCurrentPage(num)}
+                    className={`px-3 py-1 rounded-md border border-white/10 ${currentPage === num ? "bg-brown70 text-white" : "bg-transparent text-gray-200 hover:bg-white/5"}`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md border border-white/10 ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}`}
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        </>
+      )}
 
       {/* Animated Modal */}
       {showModal && selectedUser && (
         <div
-          className={`fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${animateModal ? "opacity-100" : "opacity-0"
-            }`}
+          className={`fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-200 ${animateModal ? "opacity-100" : "opacity-0"}`}
         >
           <div
-            className={`bg-black15 text-white p-6 rounded-lg w-80 shadow-lg transform transition-all duration-200 ${animateModal ? "scale-100 opacity-100" : "scale-90 opacity-0"
-              }`}
+            className={`bg-black15 text-white p-6 rounded-lg w-80 shadow-lg transform transition-all duration-200 ${animateModal ? "scale-100 opacity-100" : "scale-90 opacity-0"}`}
           >
             <div className="flex justify-center mb-4 text-4xl">
               {modalType === "role" ? <GrUserAdmin className="text-brown70" /> : <FaUserLargeSlash className="text-red-500" />}

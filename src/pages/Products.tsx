@@ -26,7 +26,7 @@ interface Product {
   } | null;
 }
 
-const categories = ["all", "woman", "man", "kids"];
+const categories = ["all", "woman", "man", "child"];
 
 export default function Products() {
   const dispatch = useAppDispatch();
