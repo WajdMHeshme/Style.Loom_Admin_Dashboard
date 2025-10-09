@@ -1,3 +1,4 @@
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -10,7 +11,12 @@ import Man from "./pages/Categories/Man";
 import Woman from "./pages/Categories/Woman";
 import Child from "./pages/Categories/Child";
 import ProductDetails from "./pages/ProductDetails";
-import FAQ from "./pages/FAQ";
+// import FAQ from "./pages/FAQ"; // <-- استبدل هذا إذا كان موجود
+
+// new FAQ pages
+import FAQList from "./pages/FAQ";
+import FAQCreate from "./pages/FAQCreate";
+
 import Users from "./pages/Users";
 import Orders from "./pages/Orders";
 import DashboardHome from "./pages/Home";
@@ -18,6 +24,7 @@ import DashboardHome from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
+import FAQEdit from "./pages/FAQEdit";
 
 function App() {
   return (
@@ -47,15 +54,20 @@ function App() {
 
             {/* Other Pages */}
             <Route path="overview" element={<Overview />} />
-            <Route path="faq" element={<FAQ />} />
+
+            {/* FAQ routes */}
+            <Route path="faq" element={<FAQList />} />           {/* /dashboard/faq */}
+            <Route path="add-faq" element={<FAQCreate />} />    {/* /dashboard/add-faq */}
+            <Route path="edit-faq/:id" element={<FAQEdit />} />
+
             <Route path="users" element={<Users />} />
             <Route path="orders" element={<Orders />} />
           </Route>
         </Route>
       </Routes>
     </Router>
-
   );
 }
 
 export default App;
+
