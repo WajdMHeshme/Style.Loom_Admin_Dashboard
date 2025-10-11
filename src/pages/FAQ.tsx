@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import api from "../api/Api";
+import { MdDeleteForever } from "react-icons/md";
 
 interface Faq {
   id: number;
@@ -21,6 +22,12 @@ export default function FAQList() {
   const [fetching, setFetching] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // modal state
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [animate, setAnimate] = useState<boolean>(false);
+  const [deleteStatus, setDeleteStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [selectedFaq, setSelectedFaq] = useState<Faq | null>(null);
 
   // pagination
   const itemsPerPage = 2; // عرض 2 سكشن لكل صفحة
@@ -88,28 +95,61 @@ export default function FAQList() {
   const activeCount = faqs.filter((f) => f.isActive).length;
   const inactiveCount = totalItems - activeCount;
 
-  const handleDelete = async (id: number) => {
-    const ok = window.confirm("هل أنت متأكد؟ سيتم حذف هذا الـ FAQ نهائياً.");
-    if (!ok) return;
+  // --- new modal helpers ---
+  function openDeleteModal(faq: Faq) {
+    setSelectedFaq(faq);
+    setShowDeleteModal(true);
+    // start animate in next tick so transition classes apply
+    setTimeout(() => setAnimate(true), 20);
+  }
 
-    setDeletingId(id);
+  function closeDeleteModal() {
+    setAnimate(false);
+    // wait for animation to finish
+    setTimeout(() => {
+      setShowDeleteModal(false);
+      setSelectedFaq(null);
+      setDeleteStatus("idle");
+    }, 180);
+  }
+
+  const confirmDelete = async () => {
+    if (!selectedFaq) return;
+    setDeleteStatus("loading");
+    setDeletingId(selectedFaq.id);
     try {
-      await api.delete(`/dashboard/faq/${id}`);
-      setFaqs((prev) => prev.filter((f) => f.id !== id));
+      await api.delete(`/dashboard/faq/${selectedFaq.id}`);
+      setFaqs((prev) => prev.filter((f) => f.id !== selectedFaq.id));
       toast.success("FAQ deleted successfully.");
-      // after removal, if current page becomes empty, move one page back (if possible)
+      // adjust page if needed
       const newTotal = totalItems - 1;
       const newTotalPages = Math.max(1, Math.ceil(newTotal / itemsPerPage));
       if (currentPage > newTotalPages) {
         setCurrentPage(newTotalPages);
       }
+      setDeleteStatus("done");
+      // close modal after short delay
+      setTimeout(() => {
+        closeDeleteModal();
+      }, 300);
     } catch (err: any) {
       console.error("Delete FAQ error:", err);
       const msg = err?.response?.data?.message || err.message || "Failed to delete FAQ";
       toast.error(msg);
+      setDeleteStatus("error");
+      setDeletingId(null);
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDelete = (id: number) => {
+    const faq = faqs.find((f) => f.id === id);
+    if (!faq) {
+      toast.error("FAQ not found");
+      return;
+    }
+    openDeleteModal(faq);
   };
 
   const toggleActive = async (f: Faq) => {
@@ -248,10 +288,10 @@ export default function FAQList() {
 
                 <button
                   onClick={() => handleDelete(f.id)}
-                  disabled={deletingId === f.id}
+                  disabled={deletingId === f.id || deleteStatus === "loading"}
                   className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-sm text-white disabled:opacity-50"
                 >
-                  {deletingId === f.id ? "Deleting..." : "Delete"}
+                  {deletingId === f.id || (selectedFaq?.id === f.id && deleteStatus === "loading") ? "Deleting..." : "Delete"}
                 </button>
 
                 <button
@@ -309,6 +349,52 @@ export default function FAQList() {
           </button>
         </div>
       </section>
+
+      {/* Custom Delete Modal */}
+      {showDeleteModal && selectedFaq && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300"
+          aria-modal="true"
+          role="dialog"
+          onClick={closeDeleteModal}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`bg-black12 rounded-2xl shadow-lg p-6 w-80 flex flex-col items-center text-center transform transition-all duration-300 ${animate ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-90 -translate-y-6"
+              }`}
+          >
+            <div className="rounded-full p-4 mb-4 text-center bg-red-600">
+              <MdDeleteForever size={24} color="#ffffff" />
+            </div>
+
+            <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
+              Confirm Delete
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{selectedFaq.question}</span>? This action
+              cannot be undone.
+            </p>
+
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                disabled={deleteStatus === "loading"}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white hover:bg-red-700 transition"
+                disabled={deleteStatus === "loading"}
+              >
+                {deleteStatus === "loading" ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

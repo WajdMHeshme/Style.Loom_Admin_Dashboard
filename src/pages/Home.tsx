@@ -21,18 +21,36 @@ interface User {
   createdAt: string;
 }
 
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  createdAt: string;
+  subCategory: {
+    id: number;
+    name: string;
+    main: {
+      id: number;
+      name: string; // e.g. "Man", "woman", "Child"
+    };
+  };
+}
+
 export default function DashboardHome(): JSX.Element {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [selectedMain, setSelectedMain] = useState<string>("all");
   const [currentUserIndex, setCurrentUserIndex] = useState<number>(0);
 
   // refs
   const userRefs = useRef<Array<HTMLDivElement | null>>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // --- Fetch users with minimum 3s loader ---
+  // --- Fetch users (original) ---
   useEffect(() => {
     const fetchUsers = async () => {
       const start = Date.now();
@@ -46,10 +64,27 @@ export default function DashboardHome(): JSX.Element {
       } finally {
         const elapsed = Date.now() - start;
         const delay = elapsed < 3000 ? 3000 - elapsed : 0;
-        setTimeout(() => setLoading(false), delay);
+        setTimeout(() => setLoadingUsers(false), delay);
       }
     };
     fetchUsers();
+  }, []);
+
+  // --- Fetch products from /product and prepare categories ---
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await api.get("/product"); // expects the response you pasted
+        setProducts(res.data ?? []);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError((e) => e ?? "Failed to load products");
+      } finally {
+        // small delay to keep UX consistent with user loader
+        setTimeout(() => setLoadingProducts(false), 300);
+      }
+    };
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -66,12 +101,14 @@ export default function DashboardHome(): JSX.Element {
   const roles = Array.from(new Set(users.map((u) => u.role))).filter(Boolean);
 
   const displayedAdmins = users.filter((u) => {
-    if (selectedRole === "all") return u.role.toLowerCase().includes("admin");
-    return u.role === selectedRole;
+    if (u.role == null) return false;
+    if (u.role.toLowerCase().includes("admin") && selectedMain === "all") return u.role.toLowerCase().includes("admin");
+    if (selectedMain !== "all") return u.role === selectedMain;
+    return u.role.toLowerCase().includes("admin");
   });
 
   const refresh = async () => {
-    setLoading(true);
+    setLoadingUsers(true);
     setError(null);
     const start = Date.now();
     try {
@@ -84,33 +121,39 @@ export default function DashboardHome(): JSX.Element {
     } finally {
       const elapsed = Date.now() - start;
       const delay = elapsed < 3000 ? 3000 - elapsed : 0;
-      setTimeout(() => setLoading(false), delay);
+      setTimeout(() => setLoadingUsers(false), delay);
     }
   };
 
-  // --- Static products data (replace later with API) ---
-  const productsData = [
-    { name: "T-Shirt", sold: 120 },
-    { name: "Jeans", sold: 95 },
-    { name: "Sneakers", sold: 78 },
-    { name: "Hoodie", sold: 55 },
-    { name: "Jacket", sold: 40 },
-  ];
+  // --- Chart logic: categories and filtered data ---
+  // unique main categories (e.g. Man, woman, Child)
+  const mainCategories = Array.from(
+    new Set(products.map((p) => p.subCategory?.main?.name ?? "Unknown"))
+  ).filter(Boolean);
+
+  // Build chart data: count of products per subCategory within selected main category
+  const chartData = (() => {
+    const filtered = selectedMain === "all" ? products : products.filter((p) => p.subCategory?.main?.name === selectedMain);
+    const counts: Record<string, number> = {};
+    filtered.forEach((p) => {
+      const name = p.subCategory?.name ?? p.name ?? "Unknown";
+      counts[name] = (counts[name] ?? 0) + 1; // counting product instances
+    });
+    return Object.keys(counts).map((k) => ({ name: k, count: counts[k] }));
+  })();
 
   const prevUser = () => {
-    setCurrentUserIndex((i) =>
-      users.length ? (i <= 0 ? users.length - 1 : i - 1) : 0
-    );
+    setCurrentUserIndex((i) => (users.length ? (i <= 0 ? users.length - 1 : i - 1) : 0));
   };
   const nextUser = () => {
-    setCurrentUserIndex((i) =>
-      users.length ? (i >= users.length - 1 ? 0 : i + 1) : 0
-    );
+    setCurrentUserIndex((i) => (users.length ? (i >= users.length - 1 ? 0 : i + 1) : 0));
   };
+
+  const isLoading = loadingUsers || loadingProducts;
 
   return (
     <div className="p-6">
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center items-center min-h-[70vh]">
           <MainLoader />
         </div>
@@ -122,18 +165,14 @@ export default function DashboardHome(): JSX.Element {
             <h2 className="text-2xl font-bold">Dashboard Home</h2>
             <div className="flex items-center gap-3">
               <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
+                value={selectedMain}
+                onChange={(e) => setSelectedMain(e.target.value)}
                 className="bg-black10 text-white text-sm px-3 py-2 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-brown70 focus:border-brown70 transition duration-200"
               >
-                <option className="bg-black15 text-white">All admins (default)</option>
-                {roles.map((r) => (
-                  <option
-                    key={r}
-                    value={r}
-                    className="bg-black15 text-white hover:bg-brown65"
-                  >
-                    {r}
+                <option value="all">All categories (default)</option>
+                {mainCategories.map((m) => (
+                  <option key={m} value={m} className="bg-black15 text-white hover:bg-brown65">
+                    {m}
                   </option>
                 ))}
               </select>
@@ -150,15 +189,10 @@ export default function DashboardHome(): JSX.Element {
           {/* TOP: Products chart + Admins */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-black15 p-4 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold mb-4">
-                Products Overview (static)
-              </h3>
+              <h3 className="text-lg font-semibold mb-4">Products Overview (by sub-category)</h3>
               <div style={{ width: "100%", height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={productsData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
-                  >
+                  <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -166,8 +200,8 @@ export default function DashboardHome(): JSX.Element {
                     <Legend />
                     <Line
                       type="monotone"
-                      dataKey="sold"
-                      name="Sold"
+                      dataKey="count"
+                      name="Products"
                       stroke="#c2b4a3"
                       strokeWidth={3}
                       dot={{ r: 5 }}
@@ -190,10 +224,7 @@ export default function DashboardHome(): JSX.Element {
               ) : (
                 <div className="space-y-3 max-h-[360px] overflow-auto pr-2">
                   {displayedAdmins.map((u) => (
-                    <div
-                      key={u.id}
-                      className="flex items-center gap-3 p-3 bg-black10 rounded"
-                    >
+                    <div key={u.id} className="flex items-center gap-3 p-3 bg-black10 rounded">
                       <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-semibold">
                         {`${u.first_name?.[0] ?? "?"}${u.last_name?.[0] ?? ""}`.toUpperCase()}
                       </div>
@@ -205,9 +236,7 @@ export default function DashboardHome(): JSX.Element {
                           </div>
                           <div className="text-sm text-gray-300">{u.role}</div>
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          Joined: {new Date(u.createdAt).toLocaleDateString()}
-                        </div>
+                        <div className="text-xs text-gray-400 mt-1">Joined: {new Date(u.createdAt).toLocaleDateString()}</div>
                       </div>
                     </div>
                   ))}
@@ -222,43 +251,18 @@ export default function DashboardHome(): JSX.Element {
               <h3 className="text-lg font-semibold">All System Users</h3>
               <div className="flex items-center gap-2">
                 <div className="text-sm text-gray-400">{users.length} found</div>
-                <button
-                  onClick={prevUser}
-                  aria-label="Previous user"
-                  className="px-2 py-1 bg-white/5 rounded hover:bg-white/10"
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={nextUser}
-                  aria-label="Next user"
-                  className="px-2 py-1 bg-white/5 rounded hover:bg-white/10"
-                >
-                  ›
-                </button>
-                <div className="text-xs text-gray-400">
-                  {users.length ? `${currentUserIndex + 1} / ${users.length}` : "0 / 0"}
-                </div>
+                <button onClick={prevUser} aria-label="Previous user" className="px-2 py-1 bg-white/5 rounded hover:bg-white/10">‹</button>
+                <button onClick={nextUser} aria-label="Next user" className="px-2 py-1 bg-white/5 rounded hover:bg-white/10">›</button>
+                <div className="text-xs text-gray-400">{users.length ? `${currentUserIndex + 1} / ${users.length}` : "0 / 0"}</div>
               </div>
             </div>
 
             {users.length === 0 ? (
               <p className="text-sm text-gray-400">No users found.</p>
             ) : (
-              <div
-                ref={containerRef}
-                className="overflow-y-auto h-28 snap-y snap-mandatory scrollbar-thin scrollbar-thumb-gray-700"
-              >
+              <div ref={containerRef} className="overflow-y-auto h-28 snap-y snap-mandatory scrollbar-thin scrollbar-thumb-gray-700">
                 {users.map((u, idx) => (
-                  <div
-                    key={u.id}
-                    ref={(el) => { userRefs.current[idx] = el; }}
-                    className={`snap-start flex items-center gap-3 p-3 bg-black10 rounded mx-1 my-1 transition-transform duration-200 ${
-                      idx === currentUserIndex ? "scale-100" : "scale-95 opacity-70"
-                    }`}
-                    style={{ minHeight: 112 }}
-                    onClick={() => setCurrentUserIndex(idx)}
-                  >
+                  <div key={u.id} ref={(el) => { userRefs.current[idx] = el; }} className={`snap-start flex items-center gap-3 p-3 bg-black10 rounded mx-1 my-1 transition-transform duration-200 ${idx === currentUserIndex ? "scale-100" : "scale-95 opacity-70"}`} style={{ minHeight: 112 }} onClick={() => setCurrentUserIndex(idx)}>
                     <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center font-semibold text-lg">
                       {`${u.first_name?.[0] ?? "?"}${u.last_name?.[0] ?? ""}`.toUpperCase()}
                     </div>
@@ -270,9 +274,7 @@ export default function DashboardHome(): JSX.Element {
                         </div>
                         <div className="text-sm text-gray-300">{u.role}</div>
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        Joined: {new Date(u.createdAt).toLocaleDateString()}
-                      </div>
+                      <div className="text-xs text-gray-400 mt-1">Joined: {new Date(u.createdAt).toLocaleDateString()}</div>
                     </div>
                   </div>
                 ))}
