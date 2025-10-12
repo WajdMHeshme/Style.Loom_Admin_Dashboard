@@ -42,7 +42,6 @@ export default function ProductDetails() {
   const confirmDelete = async () => {
     if (!id) return;
     try {
-      const deletedId = await dispatch(deleteProduct(id)).unwrap();
       toast.success("Product deleted successfully");
       closeDeleteModal();
       navigate("/dashboard/products");
@@ -75,7 +74,7 @@ export default function ProductDetails() {
   }
 
   return (
-    <div className="relative min-h-screen bg-black12 p-6 text-gray90">
+    <div className="relative min-h-screen bg-black12 p-6 text-gray90 ">
       {/* زر العودة إلى صفحة المنتجات */}
       <button
         onClick={() => navigate("/dashboard/products")}
