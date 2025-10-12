@@ -1,9 +1,8 @@
 // Sidebar.tsx
-import { Link, useNavigate } from "react-router-dom";
+import { Link,  } from "react-router-dom";
 import { FiLogOut, FiChevronLeft, FiMenu, FiClock } from "react-icons/fi";
-import { TbShoppingCartStar } from "react-icons/tb";
 import { LiaTshirtSolid } from "react-icons/lia";
-import { MdOutlineQuestionAnswer, MdOutlinePeople } from "react-icons/md";
+import { MdOutlineQuestionAnswer, MdOutlinePeople, MdOutlineReviews } from "react-icons/md";
 import { RiFileList3Line } from "react-icons/ri";
 import { useEffect, useState } from "react";
 
@@ -90,11 +89,10 @@ export default function Sidebar({
   setActiveTab,
   onLogoutClick,
 }: SidebarProps) {
-  const navigate = useNavigate();
 
   const navItems = [
     { name: "Products", icon: <LiaTshirtSolid size={20} />, path: "/dashboard/products" },
-    { name: "Overview", icon: <TbShoppingCartStar size={20} />, path: "/dashboard/overview" },
+    { name: "reviews", icon: <MdOutlineReviews  size={20} />, path: "/dashboard/overview" },
     { name: "Orders", icon: <RiFileList3Line size={20} />, path: "/dashboard/orders" },
     { name: "FAQ", icon: <MdOutlineQuestionAnswer size={20} />, path: "/dashboard/faq" },
     { name: "Users", icon: <MdOutlinePeople size={20} />, path: "/dashboard/users" },
