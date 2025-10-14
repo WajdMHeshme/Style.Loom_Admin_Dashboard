@@ -5,6 +5,7 @@ import { LiaTshirtSolid } from "react-icons/lia";
 import { MdOutlineQuestionAnswer, MdOutlinePeople, MdOutlineReviews } from "react-icons/md";
 import { RiFileList3Line } from "react-icons/ri";
 import { useEffect, useState } from "react";
+import { IoAnalyticsOutline } from "react-icons/io5";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -96,6 +97,7 @@ export default function Sidebar({
     { name: "Orders", icon: <RiFileList3Line size={20} />, path: "/dashboard/orders" },
     { name: "FAQ", icon: <MdOutlineQuestionAnswer size={20} />, path: "/dashboard/faq" },
     { name: "Users", icon: <MdOutlinePeople size={20} />, path: "/dashboard/users" },
+    { name: "Analytics", icon: <IoAnalyticsOutline  size={20} />, path: "/dashboard/analytics" },
   ];
 
   return (

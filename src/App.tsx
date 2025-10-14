@@ -25,6 +25,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
 import FAQEdit from "./pages/FAQEdit";
+import Analytics from "./pages/Analytics";
 
 function App() {
   return (
@@ -62,6 +63,8 @@ function App() {
 
             <Route path="users" element={<Users />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="analytics" element={<Analytics />} />
+          
           </Route>
         </Route>
       </Routes>
