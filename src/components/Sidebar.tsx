@@ -1,5 +1,5 @@
 // Sidebar.tsx
-import { Link,  } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FiLogOut, FiChevronLeft, FiMenu, FiClock } from "react-icons/fi";
 import { LiaTshirtSolid } from "react-icons/lia";
 import { MdOutlineQuestionAnswer, MdOutlinePeople, MdOutlineReviews } from "react-icons/md";
@@ -34,7 +34,6 @@ function SessionTimer({ collapsed }: { collapsed: boolean }) {
       }`}
       title={`Session time: ${formatted}`}
     >
-      {/* style for slow spin (included here so it works without touching global css) */}
       <style>{`
         @keyframes spin-slow {
           from { transform: rotate(0deg); }
@@ -46,11 +45,7 @@ function SessionTimer({ collapsed }: { collapsed: boolean }) {
       `}</style>
 
       <div className="flex items-center gap-2">
-        <FiClock
-          aria-hidden
-          className="spin-slow"
-          size={collapsed ? 18 : 20}
-        />
+        <FiClock aria-hidden className="spin-slow" size={collapsed ? 18 : 20} />
         {!collapsed && (
           <span>
             Session time: <strong>{formatted}</strong>
@@ -59,23 +54,13 @@ function SessionTimer({ collapsed }: { collapsed: boolean }) {
       </div>
 
       {collapsed && (
-        <span
-          className="text-xs select-none"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <span className="text-xs select-none" role="status" aria-live="polite" aria-atomic="true">
           {formatted}
         </span>
       )}
 
       {!collapsed && (
-        <span
-          className="sr-only"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {`Session time ${minutes} minutes ${remainingSeconds} seconds`}
         </span>
       )}
@@ -90,21 +75,24 @@ export default function Sidebar({
   setActiveTab,
   onLogoutClick,
 }: SidebarProps) {
-
   const navItems = [
     { name: "Products", icon: <LiaTshirtSolid size={20} />, path: "/dashboard/products" },
-    { name: "reviews", icon: <MdOutlineReviews  size={20} />, path: "/dashboard/overview" },
+    { name: "reviews", icon: <MdOutlineReviews size={20} />, path: "/dashboard/overview" },
     { name: "Orders", icon: <RiFileList3Line size={20} />, path: "/dashboard/orders" },
     { name: "FAQ", icon: <MdOutlineQuestionAnswer size={20} />, path: "/dashboard/faq" },
     { name: "Users", icon: <MdOutlinePeople size={20} />, path: "/dashboard/users" },
-    { name: "Analytics", icon: <IoAnalyticsOutline  size={20} />, path: "/dashboard/analytics" },
+    { name: "Analytics", icon: <IoAnalyticsOutline size={20} />, path: "/dashboard/analytics" },
   ];
 
   return (
     <aside
-      className={`${
-        collapsed ? "w-20" : "w-64"
-      } bg-[var(--color-black15)] text-white flex flex-col transition-all duration-300`}
+      className={`
+        ${collapsed ? "w-20" : "w-64"}
+        h-auto md:h-screen
+        md:fixed md:top-0 md:left-0
+        bg-[var(--color-black15)] text-white flex flex-col transition-all duration-300
+        overflow-y-auto
+      `}
     >
       {/* Header */}
       <div
@@ -149,7 +137,6 @@ export default function Sidebar({
             {!collapsed && <span>{item.name}</span>}
           </Link>
         ))}
-
       </nav>
 
       {/* Session timer + Logout */}

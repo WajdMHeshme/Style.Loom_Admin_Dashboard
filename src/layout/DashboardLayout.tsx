@@ -1,3 +1,4 @@
+// DashboardLayout.tsx
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
@@ -9,7 +10,7 @@ export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [animate, setAnimate] = useState(false); // 👈 للتحكم بالحركة
+  const [animate, setAnimate] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -21,13 +22,11 @@ export default function DashboardLayout() {
 
   const openModal = () => {
     setShowLogoutModal(true);
-    // نضيف تأخير بسيط لتفعيل الحركة بعد render
     setTimeout(() => setAnimate(true), 50);
   };
 
   const closeModal = () => {
     setAnimate(false);
-    // ننتظر مدة الأنميشن ثم نخفي المودال
     setTimeout(() => setShowLogoutModal(false), 300);
   };
 
@@ -43,15 +42,17 @@ export default function DashboardLayout() {
         />
 
         {/* Main Content */}
-        <main className="flex-1 bg-[var(--color-black12)] text-white">
+        <main
+          className={`flex-1 bg-[var(--color-black12)] text-white transition-all duration-300
+            ${collapsed ? "md:ml-20" : "md:ml-64"}
+          `}
+        >
           <Outlet />
         </main>
       </div>
 
-      {/* Toasts */}
       <ToastContainer position="top-center" autoClose={2000} />
 
-      {/* Logout Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300">
           <div
