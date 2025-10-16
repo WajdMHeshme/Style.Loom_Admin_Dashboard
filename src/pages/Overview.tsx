@@ -309,7 +309,7 @@ export default function WebReviewDashboard() {
                 ))}
               </div>
 
-              <p className="text-gray50 flex-1">{r.comment}</p>
+              <p className="text-gray50 flex-1 break-words">{r.comment}</p>
 
               <div className="mt-2 text-xs text-gray50">
                 User: {r.user?.first_name ?? "Unknown"} {r.user?.last_name ?? ""} <br />
