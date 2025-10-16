@@ -256,7 +256,7 @@ export default function Analytics(): JSX.Element {
         {/* Reviews */}
         <div className="bg-black15 p-5 rounded-2xl shadow">
           <h2 className="font-semibold mb-2">Reviews Distribution</h2>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-center space-x-4">
             <div style={{ width: 180, height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -269,7 +269,7 @@ export default function Analytics(): JSX.Element {
                     paddingAngle={3}
                     label={(props: any) => (props?.value > 0 ? `${props.value}` : "")}
                   >
-                    {reviewsChartData.map((entry, index) => (
+                    {reviewsChartData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
