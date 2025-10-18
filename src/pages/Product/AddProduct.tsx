@@ -4,9 +4,9 @@ import { TbFileUpload } from "react-icons/tb";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
-import api from "../api/Api"; // لجلب التصنيفات
-import { useAppDispatch } from "../redux/hooks";
-import { addProduct, fetchProducts } from "../redux/features/productsSlice";
+import api from "../../api/Api"; // لجلب التصنيفات
+import { useAppDispatch } from "../../redux/hooks";
+import { addProduct, fetchProducts } from "../../redux/features/productsSlice";
 
 type SubCategory = {
   id: number;

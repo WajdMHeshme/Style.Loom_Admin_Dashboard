@@ -5,8 +5,8 @@ import { MdDeleteForever, MdModeEditOutline } from "react-icons/md";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { TiArrowLeftThick } from "react-icons/ti";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { fetchProductById, deleteProduct, clearCurrentProduct } from "../redux/features/productsSlice";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { fetchProductById, deleteProduct, clearCurrentProduct } from "../../redux/features/productsSlice";
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();

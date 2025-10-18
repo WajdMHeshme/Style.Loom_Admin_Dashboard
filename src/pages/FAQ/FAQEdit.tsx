@@ -1,7 +1,7 @@
 // src/pages/FAQEdit.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import api from "../api/Api";
+import api from "../../api/Api";
 
 interface Faq {
   id: number;
