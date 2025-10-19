@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @theme {
-  /* 🎨 Brown palette */
   --color-brown60: #ae9b84;
   --color-brown65: #b8a893;
   --color-brown70: #c2b4a3;
@@ -10,7 +9,6 @@
   --color-brown95: #f5f3f0;
   --color-brown97: #f9f8f6;
   --color-brown99: #fdfdfc;
-
   /* 🖤 Black palette */
   --color-black06: #0f0f0f;
   --color-black10: #1a1a1a;
@@ -20,7 +18,6 @@
   --color-black25: #404040;
   --color-black30: #4d4d4d;
   --color-black35: #595959;
-
   /* ⚪ Gray palette */
   --color-gray40: #676665;
   --color-gray50: #81807e;
@@ -30,31 +27,24 @@
   --color-gray95: #f2f2f2;
   --color-gray97: #f7f7f7;
   --color-gray99: #fcfcfc;
-
 }
-
 body {
   font-family: 'Roboto', sans-serif;
 }
-
 ::-webkit-scrollbar {
   width: 8px;              
   height: 8px;              
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;  
 }
-
 ::-webkit-scrollbar-thumb {
   background-color: #C2B4A3; 
   border-radius: 9999px;     
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background-color: #C2B4A3; 
 }
-
 * {
   scrollbar-width: thin;
   scrollbar-color: #C2B4A3 #1a1a1a;
