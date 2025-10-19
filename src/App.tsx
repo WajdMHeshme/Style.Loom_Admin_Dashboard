@@ -5,27 +5,25 @@ import "react-toastify/dist/ReactToastify.css";
 import Login from "./pages/Auth/Login/Login";
 import DashboardLayout from "./layout/DashboardLayout";
 
-import Products from "./pages/Products";
-import Overview from "./pages/Overview";
-import Man from "./pages/Categories/Man";
-import Woman from "./pages/Categories/Woman";
-import Child from "./pages/Categories/Child";
-import ProductDetails from "./pages/ProductDetails";
+import Products from "./pages/Product/Products";
+import Overview from "./pages/Overview/Overview";
+
+import ProductDetails from "./pages/Product/ProductDetails";
 // import FAQ from "./pages/FAQ"; // <-- استبدل هذا إذا كان موجود
 
 // new FAQ pages
-import FAQList from "./pages/FAQ";
-import FAQCreate from "./pages/FAQCreate";
+import FAQList from "./pages/FAQ/FAQ";
+import FAQCreate from "./pages/FAQ/FAQCreate";
 
-import Users from "./pages/Users";
-import Orders from "./pages/Orders";
-import DashboardHome from "./pages/Home";
+import Users from "./pages/User/Users";
+import Orders from "./pages/Order/Orders";
+import DashboardHome from "./pages/Home/Home";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import AddProduct from "./pages/AddProduct";
-import EditProduct from "./pages/EditProduct";
-import FAQEdit from "./pages/FAQEdit";
-import Analytics from "./pages/Analytics";
+import AddProduct from "./pages/Product/AddProduct";
+import EditProduct from "./pages/Product/EditProduct";
+import FAQEdit from "./pages/FAQ/FAQEdit";
+import Analytics from "./pages/Analytics/Analytics";
 
 function App() {
   return (
@@ -47,11 +45,7 @@ function App() {
             <Route path="edit-product/:id" element={<EditProduct />} />
 
             {/* Categories */}
-            <Route path="categories">
-              <Route path="man" element={<Man />} />
-              <Route path="woman" element={<Woman />} />
-              <Route path="child" element={<Child />} />
-            </Route>
+
 
             {/* Other Pages */}
             <Route path="overview" element={<Overview />} />

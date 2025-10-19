@@ -5,12 +5,12 @@ import { MdDeleteForever, MdModeEditOutline } from "react-icons/md";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { TiArrowLeftThick } from "react-icons/ti";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import {
   fetchProductById,
-  deleteProduct,
   clearCurrentProduct,
-} from "../redux/features/productsSlice";
+} from "../../redux/features/productsSlice";
+import axios, { AxiosError } from "axios";
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
@@ -22,11 +22,12 @@ export default function ProductDetails() {
   const currentError = useAppSelector((s) => s.products.error);
   const deleteStatus = useAppSelector((s) => s.products.deleteStatus);
 
-  // try to read token from common places (you can adapt the keys to your app)
-  const tokenFromStore = useAppSelector((s: any) => s.auth?.token ?? null);
+  // محاولة قراءة التوكن من الـ Redux (state.auth.token) أو من localStorage كبديل
+  const tokenFromStore = useAppSelector((s: any) => s?.auth?.token ?? null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [animate, setAnimate] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -46,82 +47,104 @@ export default function ProductDetails() {
     setTimeout(() => setShowDeleteModal(false), 220);
   };
 
-  // helper to read cookie
-  function getCookie(name: string) {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(
-      new RegExp("(^| )" + name + "=([^;]+)")
-    );
-    return match ? decodeURIComponent(match[2]) : null;
-  }
+  // configurable API base (يمكن وضع VITE_API_BASE في .env إذا تحب)
+  const API_BASE =
+    (import.meta.env && (import.meta.env.VITE_API_BASE as string)) ||
+    "http://localhost:3000";
 
-  // unified token getter: prefers redux, falls back to localStorage keys and cookies
-  function getAuthToken() {
-    if (tokenFromStore) return tokenFromStore;
-    const localKeys = ["token", "authToken", "accessToken", "jwt"];
-    for (const k of localKeys) {
-      const v = localStorage.getItem(k);
-      if (v) return v;
-    }
-    return getCookie("token") || getCookie("authToken") || null;
-  }
-
-  // Confirm delete: calls DELETE endpoint directly (token-aware), updates UI and store
   const confirmDelete = async () => {
     if (!id) return;
 
-    const token = getAuthToken();
+    // احصل على التوكن: أولوية للـ Redux ثم localStorage
+    const token =
+      tokenFromStore ??
+      (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+
+    if (!token) {
+      toast.error("You are not authenticated. Please log in.");
+      navigate("/login");
+      return;
+    }
+
+    const url = `${API_BASE}/api/dashboard/pro/${id}`;
+    const headers = { Authorization: `Bearer ${token}` };
+
+    setIsDeleting(true);
+
     try {
-      // optimistically show toast & close modal only after success? here we wait for server response
-      // show a pending toast (optional)
-      const toastId = toast.loading("Deleting product...");
+      // 1) نجرب مع withCredentials (لو السيرفر يعتمد على الكوكيز + auth)
+      const res = await axios.delete(url, { headers, withCredentials: true });
 
-      const res = await fetch(`http://localhost:3000/api/dashboard/pro/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        // body: JSON.stringify({}) // usually not required for DELETE
-      });
+      // نجاح: قد يكون 200 أو 204 أو رسالة في data
+      if (res.status === 200 || res.status === 204) {
+        toast.success("Product deleted successfully");
+      } else {
+        toast.success(res.data?.message ?? "Product deleted successfully");
+      }
 
-      if (!res.ok) {
-        // try to parse json error
-        let errMsg = `Server responded with ${res.status}`;
-        try {
-          const data = await res.json();
-          if (data?.error) errMsg = data.error;
-          else if (data?.message) errMsg = data.message;
-        } catch (e) {
-          const text = await res.text();
-          if (text) errMsg = text;
-        }
-        toast.update(toastId, {
-          render: errMsg,
-          type: "error",
-          isLoading: false,
-          autoClose: 4000,
-        });
-        console.error("Delete failed:", errMsg);
+      dispatch(clearCurrentProduct());
+      closeDeleteModal();
+      navigate("/dashboard/products");
+    } catch (err) {
+      // لو فشل، نعمل معالجة متدرجة
+      const e = err as AxiosError | any;
+      console.error("Delete error full:", e);
+      console.error("response:", e?.response);
+      console.error("request:", e?.request);
+      console.error("message:", e?.message);
+
+      // 401 -> غير مصرح به
+      if (e?.response?.status === 401) {
+        toast.error("Session expired or unauthorized. Please log in again.");
+        navigate("/login");
+        setIsDeleting(false);
         return;
       }
 
-      // success
-      // if you also use redux slice to keep products list in sync, dispatch an action
-      // try dispatching the existing thunk (if you want) — here we'll clear current product
-      dispatch(clearCurrentProduct());
+      // لو كانت مشكلة شبكة (بما في ذلك CORS أو السيرفر متوقف)
+      if (e?.code === "ERR_NETWORK" || e?.message === "Network Error") {
+        // نجرب طلب بديل بدون withCredentials (كـ fallback)
+        try {
+          const res2 = await axios.delete(url, { headers });
+          if (res2.status === 200 || res2.status === 204) {
+            toast.success("Product deleted successfully (via fallback)");
+            dispatch(clearCurrentProduct());
+            closeDeleteModal();
+            navigate("/dashboard/products");
+            setIsDeleting(false);
+            return;
+          } else {
+            toast.success(res2.data?.message ?? "Product deleted");
+            dispatch(clearCurrentProduct());
+            closeDeleteModal();
+            navigate("/dashboard/products");
+            setIsDeleting(false);
+            return;
+          }
+        } catch (err2) {
+          console.error("Fallback delete error:", err2);
+          // نعرض رسالة واضحة للمستخدم عن احتمال سبب المشكلة
+          toast.error(
+            "Network error: failed to reach server. Check backend server is running and CORS is configured."
+          );
+          // اقتراحات في الـ console للمساعدة في إصلاح CORS
+          console.warn(
+            `If you're developing locally, consider:\n` +
+              `1) Ensuring backend runs at ${API_BASE}\n` +
+              `2) Enabling CORS on the server (Access-Control-Allow-Origin: http://localhost:5173, Access-Control-Allow-Credentials: true)\n` +
+              `3) Or configure Vite proxy (vite.config.ts) to forward /api to ${API_BASE}`
+          );
+          setIsDeleting(false);
+          return;
+        }
+      }
 
-      toast.update(toastId, {
-        render: "Product deleted successfully",
-        type: "success",
-        isLoading: false,
-        autoClose: 2000,
-      });
-      closeDeleteModal();
-      navigate("/dashboard/products");
-    } catch (err: any) {
-      console.error("Delete error:", err);
-      toast.error(err?.message ?? "Failed to delete product");
+      // أخطاء أخرى: أظهر رسالة مفصّلة لو توفرت أو رسالة عامة
+      const errMsg =
+        e?.response?.data?.message ?? e?.message ?? "Failed to delete product";
+      toast.error(errMsg);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -174,7 +197,7 @@ export default function ProductDetails() {
           <img
             src={
               product.imageUrl
-                ? `http://localhost:3000${product.imageUrl}`
+                ? `${API_BASE}${product.imageUrl}`
                 : "/placeholder.png"
             }
             alt={product.name ?? product.productName}
@@ -208,7 +231,7 @@ export default function ProductDetails() {
                 <div>
                   <span className="font-semibold text-gray90">Reviews:</span>
                   <ul className="list-disc ml-5 mt-2 text-gray50">
-                    {product.reviews.map((rev: any) => (
+                    {product.reviews.map((rev) => (
                       <li key={rev.id}>
                         {rev.comment} - {rev.rating}/5
                       </li>
@@ -231,11 +254,13 @@ export default function ProductDetails() {
 
             <button
               onClick={openDeleteModal}
-              disabled={deleteStatus === "loading"}
-              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm md:text-base cursor-pointer"
+              disabled={deleteStatus === "loading" || isDeleting}
+              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm md:text-base cursor-pointer disabled:opacity-60"
             >
               <MdDeleteForever size={20} />
-              {deleteStatus === "loading" ? "Deleting..." : "Delete Product"}
+              {deleteStatus === "loading" || isDeleting
+                ? "Deleting..."
+                : "Delete Product"}
             </button>
           </div>
         </div>
@@ -276,16 +301,18 @@ export default function ProductDetails() {
               <button
                 onClick={closeDeleteModal}
                 className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                disabled={deleteStatus === "loading"}
+                disabled={deleteStatus === "loading" || isDeleting}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 className="flex-1 py-2 rounded-lg bg-red-500 text-white hover:bg-red-700 transition"
-                disabled={deleteStatus === "loading"}
+                disabled={deleteStatus === "loading" || isDeleting}
               >
-                {deleteStatus === "loading" ? "Deleting..." : "Delete"}
+                {deleteStatus === "loading" || isDeleting
+                  ? "Deleting..."
+                  : "Delete"}
               </button>
             </div>
           </div>

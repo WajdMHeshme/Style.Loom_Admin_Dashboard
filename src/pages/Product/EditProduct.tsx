@@ -4,8 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { TbFileUpload } from "react-icons/tb";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { fetchProductById, updateProduct, clearCurrentProduct } from "../redux/features/productsSlice";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { fetchProductById, updateProduct, clearCurrentProduct } from "../../redux/features/productsSlice";
 
 export default function EditProduct() {
   const { id } = useParams<{ id: string }>();

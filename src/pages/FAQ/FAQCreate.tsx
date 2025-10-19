@@ -1,7 +1,7 @@
 // src/pages/FAQCreate.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/Api";
+import api from "../../api/Api";
 
 export default function FAQCreate() {
   const navigate = useNavigate();
