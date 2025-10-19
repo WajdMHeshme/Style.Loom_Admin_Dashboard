@@ -1,6 +1,10 @@
 // src/App.tsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import "react-toastify/dist/ReactToastify.css";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 import Login from "./pages/Auth/Login/Login";
 import DashboardLayout from "./layout/DashboardLayout";
@@ -9,7 +13,6 @@ import Products from "./pages/Product/Products";
 import Overview from "./pages/Overview/Overview";
 
 import ProductDetails from "./pages/Product/ProductDetails";
-// import FAQ from "./pages/FAQ"; // <-- استبدل هذا إذا كان موجود
 
 // new FAQ pages
 import FAQList from "./pages/FAQ/FAQ";
@@ -37,28 +40,22 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
-
             {/* Products */}
             <Route path="products" element={<Products />} />
             <Route path="product/:id" element={<ProductDetails />} />
             <Route path="add-product" element={<AddProduct />} />
             <Route path="edit-product/:id" element={<EditProduct />} />
-
             {/* Categories */}
-
-
             {/* Other Pages */}
             <Route path="overview" element={<Overview />} />
-
             {/* FAQ routes */}
-            <Route path="faq" element={<FAQList />} />           {/* /dashboard/faq */}
-            <Route path="add-faq" element={<FAQCreate />} />    {/* /dashboard/add-faq */}
+            <Route path="faq" element={<FAQList />} /> {/* /dashboard/faq */}
+            <Route path="add-faq" element={<FAQCreate />} />{" "}
+            {/* /dashboard/add-faq */}
             <Route path="edit-faq/:id" element={<FAQEdit />} />
-
             <Route path="users" element={<Users />} />
             <Route path="orders" element={<Orders />} />
             <Route path="analytics" element={<Analytics />} />
-          
           </Route>
         </Route>
       </Routes>
@@ -67,4 +64,3 @@ function App() {
 }
 
 export default App;
-

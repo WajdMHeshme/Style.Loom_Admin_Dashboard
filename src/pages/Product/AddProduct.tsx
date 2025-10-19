@@ -1,12 +1,11 @@
 // src/pages/AddProduct.tsx
 import React, { useEffect, useState } from "react";
 import { TbFileUpload } from "react-icons/tb";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/Api"; // لجلب التصنيفات
 import { useAppDispatch } from "../../redux/hooks";
 import { addProduct, fetchProducts } from "../../redux/features/productsSlice";
+import { toast } from "react-toastify";
 
 type SubCategory = {
   id: number;
@@ -83,18 +82,36 @@ export default function AddProduct() {
     setSubId("");
   }, [mainCategoryId, mainCategories]);
 
+  // cleanup preview object URLs on unmount or when preview changes
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
   // image handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     if (!f) {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+        setPreview(null);
+      }
       setFile(null);
-      setPreview(null);
       return;
     }
     if (!f.type.startsWith("image/")) {
       toast.error("Please select an image file.");
       return;
     }
+
+    // revoke previous preview if any
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
     setFile(f);
     setPreview(URL.createObjectURL(f));
   };
@@ -121,14 +138,22 @@ export default function AddProduct() {
     const subIdNum = Number(subId);
     const mainIdNum = Number(mainCategoryId);
 
-    if (!Number.isFinite(priceNum) || priceNum <= 0)
-      return toast.error("Price must be positive.");
-    if (!Number.isFinite(stockNum) || stockNum < 0)
-      return toast.error("Stock must be 0 or positive.");
-    if (!Number.isFinite(subIdNum) || subIdNum <= 0)
-      return toast.error("Select a valid sub category.");
-    if (!Number.isFinite(mainIdNum) || mainIdNum <= 0)
-      return toast.error("Select a valid main category.");
+    if (!Number.isFinite(priceNum) || priceNum <= 0) {
+      toast.error("Price must be positive.");
+      return;
+    }
+    if (!Number.isFinite(stockNum) || stockNum < 0) {
+      toast.error("Stock must be 0 or positive.");
+      return;
+    }
+    if (!Number.isFinite(subIdNum) || subIdNum <= 0) {
+      toast.error("Select a valid sub category.");
+      return;
+    }
+    if (!Number.isFinite(mainIdNum) || mainIdNum <= 0) {
+      toast.error("Select a valid main category.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("image", file);
@@ -159,10 +184,11 @@ export default function AddProduct() {
 
       const message = (result as any)?.message ?? "Product created successfully";
 
-      // 3) navigate to products and pass toast message via location.state
-      navigate("/dashboard/products", {
-        state: { toast: { type: "success", message } },
-      });
+      // ====== Important: show toast HERE (once) and navigate WITHOUT passing location.state ======
+      toast.success(message);
+
+      // 3) navigate to products (no state)
+      navigate("/dashboard/products");
     } catch (err: any) {
       console.error("Error creating product:", err);
       const errMsg =
@@ -291,7 +317,10 @@ export default function AddProduct() {
             setPrice("");
             setDescription("");
             setStock("");
-            setPreview(null);
+            if (preview) {
+              URL.revokeObjectURL(preview);
+              setPreview(null);
+            }
             setFile(null);
             setSubId("");
             setMainCategoryId("");
@@ -305,7 +334,7 @@ export default function AddProduct() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="px-4 py-2 rounded-lg bg-brown70 text-white hover:bg-brown65 transition cursor-pointer"
+          className="px-4 py-2 rounded-lg bg-brown70 text-white hover:bg-brown65 transition cursor-pointer disabled:opacity-60"
         >
           {loading ? "Adding..." : "Add Product"}
         </button>

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import LoadingWave from "../../utils/waveLoader/WaveLoader";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { fetchProducts } from "../../redux/features/productsSlice";
 import Pagination from "../../components/Pagination";
+import { toast } from "react-toastify";
 
 interface Product {
   id?: number | string;
@@ -86,7 +85,6 @@ export default function Products() {
 
   return (
     <div className="p-6">
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
       <div className="flex justify-between items-center mb-6">
         <div className="flex gap-4">

@@ -1,7 +1,7 @@
 // src/pages/FAQList.tsx
 import { useEffect, useMemo, useState, type JSX } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { type Faq, fetchFaqs, deleteFaq, toggleFaqActive } from "../../redux/features/faqSlice";
 import FaqCard from "./FaqCard";
@@ -38,15 +38,51 @@ export default function FAQ(): JSX.Element {
   // show toast from navigation state (create/edit pages)
   useEffect(() => {
     const ns = (location.state as any) ?? {};
-    if (ns.toast?.message) {
-      const { type = "success", message } = ns.toast;
-      // call toast[type] if exists else success
-      (toast as any)[type] ? (toast as any)[type](message) : toast.success(message);
-      // clear nav state
-      navigate(location.pathname, { replace: true, state: {} });
+    const message = ns.toast?.message;
+    const type = ns.toast?.type ?? "success";
+
+    if (message) {
+      try {
+        // Deduping logic using sessionStorage:
+        // store { message, ts } under key 'lastNavToast'
+        const key = "lastNavToast";
+        const raw = sessionStorage.getItem(key);
+        let shouldShow = true;
+
+        if (raw) {
+          const parsed = JSON.parse(raw) as { message: string; ts: number } | null;
+          if (parsed && parsed.message === message) {
+            // if last shown within 5 seconds, skip showing again
+            const age = Date.now() - (parsed.ts || 0);
+            if (age < 5000) {
+              shouldShow = false;
+            }
+          }
+        }
+
+        if (shouldShow) {
+          // show the toast (choose correct type)
+          if ((toast as any)[type]) {
+            (toast as any)[type](message);
+          } else {
+            toast.success(message);
+          }
+          // record shown message with timestamp
+          sessionStorage.setItem(
+            key,
+            JSON.stringify({ message, ts: Date.now() })
+          );
+        }
+      } catch (err) {
+        // fallback: just show toast once if something went wrong with storage
+        toast.success(message);
+      } finally {
+        // clear nav state to avoid repeated attempts on remount/navigation
+        navigate(location.pathname, { replace: true, state: {} });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // run only on mount
 
   // keep currentPage valid if faqs length changed (e.g., after delete)
   useEffect(() => {
@@ -95,7 +131,6 @@ export default function FAQ(): JSX.Element {
 
   return (
     <div className="p-6">
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
       {/* Header */}
       <section className="mb-6 flex items-center justify-between">
